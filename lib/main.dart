@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:jersey_ecommerce/HomePage.dart';
+import 'package:jersey_ecommerce/NavigationScreen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -16,7 +17,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: HomePage(),
+      home: NavigationScreen(),
       debugShowCheckedModeBanner: false,
     );
   }
