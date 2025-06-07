@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:jersey_ecommerce/models/JerseyModel.dart';
+import 'package:jersey_ecommerce/models/Jerseys.dart';
 import 'package:jersey_ecommerce/screens/ProductPage.dart';
+import 'package:jersey_ecommerce/service/FirestoreService.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -10,6 +13,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final FirestoreService service = FirestoreService();
   List<String> categoryImages = [
     "https://download.logo.wine/logo/Adidas/Adidas-Logo.wine.png",
     "https://static.cdnlogo.com/logos/p/3/puma-thumb.png",
@@ -46,68 +50,56 @@ class _HomePageState extends State<HomePage> {
             ),
           ],
         ),
-        body: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 20),
-              Center(child: _locationBar(context)),
-              const SizedBox(height: 20),
-              _newArrivalCard(context),
+        body: StreamBuilder<List<JerseyModel>>(
+          stream: service.getJerseysStream(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            final data = snapshot.data;
+            print(data);
+            return SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 20),
+                  Center(child: _locationBar(context)),
+                  const SizedBox(height: 20),
+                  _newArrivalCard(context),
 
-              const SizedBox(height: 25),
-              SizedBox(
-                height: 60,
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  scrollDirection: Axis.horizontal,
-                  itemCount: categoryImages.length,
-                  itemBuilder: (context, index) {
-                    return categorySelector(context, categoryImages[index]);
-                  },
-                ),
+                  const SizedBox(height: 25),
+                  SizedBox(
+                    height: 60,
+                    child: ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      scrollDirection: Axis.horizontal,
+                      itemCount: categoryImages.length,
+                      itemBuilder: (context, index) {
+                        return categorySelector(context, categoryImages[index]);
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: GridView.count(
+                      crossAxisCount: 2,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 16,
+                      childAspectRatio: 0.7,
+                      children:
+                          data!
+                              .map((jersey) => productCard(context, jersey))
+                              .toList(),
+                    ),
+                  ),
+                  // Add your product list here
+                ],
               ),
-              const SizedBox(height: 20),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: GridView.count(
-                  crossAxisCount: 2,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  mainAxisSpacing: 16,
-                  crossAxisSpacing: 16,
-                  childAspectRatio: 0.7,
-                  children: [
-                    productCard(
-                      context,
-                      "https://assets.adidas.com/images/w_1880,f_auto,q_auto/fc3273f7cd9a442694051098a5e1413e_9366/IN3520_HM30.jpg",
-                      "Manchester United Home 2023/24",
-                      2000,
-                    ),
-                    productCard(
-                      context,
-                      "https://i.redd.it/bb92a2i3gva91.jpg",
-                      "Real Madrid Special Kit",
-                      1800,
-                    ),
-                    productCard(
-                      context,
-                      "https://thefootballheritage.com/wp-content/uploads/2024/05/b58afdae-scaled.jpg",
-                      "Dortmund Away 2023/24",
-                      1700,
-                    ),
-                    productCard(
-                      context,
-                      "https://retroclubkit.com/cdn/shop/files/MAINPICPORTOSPECIAL_600x.webp?v=1691214511",
-                      "New Balance FC Porto 2023/24",
-                      1600,
-                    ),
-                  ],
-                ),
-              ),
-              // Add your product list here
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
@@ -382,7 +374,7 @@ Widget _newArrivalCard(BuildContext context) {
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
                         child: Image.network(
-                          "https://i2-prod.mirror.co.uk/article33323478.ece/ALTERNATES/s615/0_marcus-rasPNG.png",
+                          "https://www.gogoalshopcloud.com/upload/ttmall/img/20230627/6fe5752631cdcfe2458f18d7b56e2d75.png",
                           width: 120,
                           height: 140,
                           fit: BoxFit.contain,
@@ -474,24 +466,18 @@ Widget categorySelector(BuildContext context, String imageUrl) {
   );
 }
 
-Widget productCard(
-  BuildContext context,
-  String imageUrl,
-  String title,
-  double price,
-) {
+Widget productCard(BuildContext context, JerseyModel jerseyModel) {
   return GestureDetector(
-    onTap: (){
+    onTap: () {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => const ProductPage(),
+          builder: (context) => ProductPage(model: jerseyModel),
         ),
       );
     },
     child: Container(
       width: MediaQuery.sizeOf(context).width * 0.4,
-      // height: 200,
       margin: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
       child: Column(
@@ -502,12 +488,16 @@ Widget productCard(
               ClipRRect(
                 borderRadius: BorderRadius.circular(16),
                 child: Image.network(
-                  imageUrl,
+                  jerseyModel.jerseyImage[0],
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
                     return Container(
                       color: Colors.grey[200],
-                      child: Icon(Icons.image, color: Colors.grey[400], size: 50),
+                      child: Icon(
+                        Icons.image,
+                        color: Colors.grey[400],
+                        size: 50,
+                      ),
                     );
                   },
                 ),
@@ -516,7 +506,10 @@ Widget productCard(
                 top: 8,
                 right: 8,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.85),
                     borderRadius: BorderRadius.circular(8),
@@ -526,7 +519,7 @@ Widget productCard(
                       Icon(Icons.star, color: Colors.amber[700], size: 16),
                       const SizedBox(width: 2),
                       Text(
-                        "4.5",
+                        jerseyModel.rating.toString(),
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
@@ -543,14 +536,14 @@ Widget productCard(
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Text(
-              title,
+              jerseyModel.jerseyTitle,
               style: GoogleFonts.pixelifySans(fontWeight: FontWeight.bold),
             ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Text(
-              "Rs. $price",
+              "Rs. ${jerseyModel.jerseyPrice}",
               style: GoogleFonts.pixelifySans(fontWeight: FontWeight.bold),
             ),
           ),

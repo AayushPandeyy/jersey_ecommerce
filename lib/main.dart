@@ -4,9 +4,8 @@ import 'package:jersey_ecommerce/firebase_options.dart';
 import 'package:jersey_ecommerce/screens/NavigationScreen.dart';
 
 void main() async{
-  await Firebase.initializeApp(
-  options: DefaultFirebaseOptions.currentPlatform,
- );
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MyApp());
 }
 
