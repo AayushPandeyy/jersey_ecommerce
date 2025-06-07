@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "580006671094",
+    "project_id": "jersey-ecocmmerce",
+    "storage_bucket": "jersey-ecocmmerce.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:580006671094:android:cf73d1b6a6b0126582f2d7",
+        "android_client_info": {
+          "package_name": "com.example.jersey_ecommerce"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAW1ZbrVR080VoRQGeLEyJIbbr-qUy1MWc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,8 +1,12 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:jersey_ecommerce/screens/HomePage.dart';
+import 'package:jersey_ecommerce/firebase_options.dart';
 import 'package:jersey_ecommerce/screens/NavigationScreen.dart';
 
-void main() {
+void main() async{
+  await Firebase.initializeApp(
+  options: DefaultFirebaseOptions.currentPlatform,
+ );
   runApp(const MyApp());
 }
 
