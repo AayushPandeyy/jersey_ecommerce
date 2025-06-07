@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:jersey_ecommerce/ProductPage.dart';
+import 'package:jersey_ecommerce/screens/ProductPage.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});

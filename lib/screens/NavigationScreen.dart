@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:jersey_ecommerce/HomePage.dart';
+import 'package:jersey_ecommerce/screens/HomePage.dart';
 
 class NavigationScreen extends StatefulWidget {
   const NavigationScreen({super.key});

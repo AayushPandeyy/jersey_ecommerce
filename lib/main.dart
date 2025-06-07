@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:jersey_ecommerce/HomePage.dart';
-import 'package:jersey_ecommerce/NavigationScreen.dart';
+import 'package:jersey_ecommerce/screens/HomePage.dart';
+import 'package:jersey_ecommerce/screens/NavigationScreen.dart';
 
 void main() {
   runApp(const MyApp());
