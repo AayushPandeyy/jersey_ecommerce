@@ -21,19 +21,12 @@ class _NavigationScreenState extends State<NavigationScreen>
 
   final List<IconData> bottomBarIcons = [
     Icons.home,
-    Icons.push_pin_outlined,
-    Icons.add,
-    Icons.tag,
+    Icons.search,
+    Icons.add_shopping_cart,
+    Icons.favorite,
     Icons.person,
   ];
 
-  final List<String> bottomBarLabels = [
-    "Home",
-    "Saved",
-    "Add",
-    "Tags",
-    "Profile",
-  ];
 
   int currentIndex = 0;
   late AnimationController _animationController;

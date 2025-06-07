@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:jersey_ecommerce/ProductPage.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -479,72 +480,82 @@ Widget productCard(
   String title,
   double price,
 ) {
-  return Container(
-    width: MediaQuery.sizeOf(context).width * 0.4,
-    // height: 200,
-    margin: const EdgeInsets.symmetric(horizontal: 10),
-    decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Stack(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Image.network(
-                imageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: Colors.grey[200],
-                    child: Icon(Icons.image, color: Colors.grey[400], size: 50),
-                  );
-                },
-              ),
-            ),
-            Positioned(
-              top: 8,
-              right: 8,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.85),
-                  borderRadius: BorderRadius.circular(8),
+  return GestureDetector(
+    onTap: (){
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const ProductPage(),
+        ),
+      );
+    },
+    child: Container(
+      width: MediaQuery.sizeOf(context).width * 0.4,
+      // height: 200,
+      margin: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(16)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Stack(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: Colors.grey[200],
+                      child: Icon(Icons.image, color: Colors.grey[400], size: 50),
+                    );
+                  },
                 ),
-                child: Row(
-                  children: [
-                    Icon(Icons.star, color: Colors.amber[700], size: 16),
-                    const SizedBox(width: 2),
-                    Text(
-                      "4.5",
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+              ),
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.85),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.star, color: Colors.amber[700], size: 16),
+                      const SizedBox(width: 2),
+                      Text(
+                        "4.5",
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Text(
+              title,
+              style: GoogleFonts.pixelifySans(fontWeight: FontWeight.bold),
             ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Text(
-            title,
-            style: GoogleFonts.pixelifySans(fontWeight: FontWeight.bold),
           ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: Text(
-            "\$$price",
-            style: GoogleFonts.pixelifySans(fontWeight: FontWeight.bold),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Text(
+              "Rs. $price",
+              style: GoogleFonts.pixelifySans(fontWeight: FontWeight.bold),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     ),
   );
 }
