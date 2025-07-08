@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:jersey_ecommerce/firebase_options.dart';
 import 'package:jersey_ecommerce/screens/NavigationScreen.dart';
+import 'package:jersey_ecommerce/screens/auth/AuthPage.dart';
 
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,7 +21,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: NavigationScreen(),
+      home: AuthPage(),
       debugShowCheckedModeBanner: false,
     );
   }

@@ -23,7 +23,7 @@ class _ProductPageState extends State<ProductPage> {
 
   void buyNow() async {
     await firestoreService.addOrder(
-      "abcdefg", // Replace with actual user ID
+      FirebaseAuth.instance.currentUser!.uid, // Replace with actual user ID
       widget.model, 
       quantity,
       selectedSize ?? "M",

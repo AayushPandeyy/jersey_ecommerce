@@ -41,7 +41,7 @@ class _ImageViewerWidgetState extends State<ImageViewerWidget> {
         width: widget.width,
         decoration: BoxDecoration(
           color: Colors.grey[200],
-          borderRadius: widget.borderRadius ?? BorderRadius.circular(12),
+          borderRadius: widget.borderRadius ,
         ),
         child: Center(
           child: Icon(

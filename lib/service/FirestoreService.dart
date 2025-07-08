@@ -2,6 +2,30 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/JerseyModel.dart';
 
 class FirestoreService {
+
+    Stream<List<Map<String, dynamic>>> getUserDataByEmail(String email) {
+    return FirebaseFirestore.instance
+        .collection('Users') // The name of your collection
+        .where('email', isEqualTo: email)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final user = doc.data();
+        return user;
+      }).toList();
+    });
+  }
+
+  Future<void> addUserToDatabase(
+      String uid, email, fullname, phoneNumber) async {
+    await FirebaseFirestore.instance.collection("Users").doc(uid).set({
+      'uid': uid,
+      "email": email,
+      "fullname": fullname,
+      "phoneNumber": phoneNumber,
+
+    });
+  }
   Stream<List<JerseyModel>> getJerseysStream() {
     return FirebaseFirestore.instance
         .collection('Jersey')
