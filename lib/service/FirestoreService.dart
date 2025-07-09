@@ -1,4 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:jersey_ecommerce/enum/OrderStatus.dart';
+import 'package:jersey_ecommerce/enum/PaymentMethod.dart';
+import 'package:jersey_ecommerce/models/OrderModel.dart';
 import '../models/JerseyModel.dart';
 
 class FirestoreService {
@@ -67,16 +70,77 @@ class FirestoreService {
     return null;
   }
 
-  Future<void> addOrder(String userId, JerseyModel jersey, int quantity,String size) async {
-    await FirebaseFirestore.instance.collection('Orders').add({
-      'userId': userId,
-      'jerseyTitle': jersey.jerseyTitle,
-      'jerseyDescription': jersey.jerseyDescription,
-      'jerseyImage': jersey.jerseyImage,
-      'jerseyPrice': jersey.jerseyPrice,
-      'size': size,                                 
-      'quantity': quantity,
-      'timestamp': FieldValue.serverTimestamp(),
-    });
-  }
+Future<void> addOrder(String userId, OrderModel order) async {
+  await FirebaseFirestore.instance.collection('Orders').add({
+    'userId': userId,
+    'jersey': {
+      'jerseyTitle': order.jersey.jerseyTitle,
+      'jerseyDescription': order.jersey.jerseyDescription,
+      'jerseyImage': order.jersey.jerseyImage,
+      'jerseyPrice': order.jersey.jerseyPrice,
+      'rating': order.jersey.rating,
+      // Add other jersey fields if needed
+    },
+    'selectedSize': order.selectedSize, // Renamed to match getter in fetch
+    'quantity': order.quantity,
+    'fullname': order.fullname,
+    'phoneNumber': order.phoneNUmber,  // Fixed typo: phoneNUmber → phoneNumber
+    'address': order.address,
+    'city': order.city,
+    'postalCode': order.postalCode,
+    'status': order.status.name,
+    'paymentMethod': order.paymentMethod.name,
+    'totalAmount':order.totalAmount,
+    'timestamp': FieldValue.serverTimestamp(),
+  });
 }
+
+   Stream<List<OrderModel>> getUserOrders(String userId) {
+  return FirebaseFirestore.instance
+      .collection('Orders')
+      .where('userId', isEqualTo: userId)
+      .orderBy('timestamp', descending: true)
+      .snapshots()
+      .map((QuerySnapshot snapshot) {
+    return snapshot.docs.map((doc) {
+      final data = doc.data() as Map<String, dynamic>;
+
+      final jerseyData = data['jersey'] as Map<String, dynamic>? ?? {};
+      final jerseyModel = JerseyModel(
+        jerseyTitle: jerseyData['jerseyTitle'] ?? '',
+        jerseyDescription: jerseyData['jerseyDescription'] ?? '',
+        jerseyPrice: (jerseyData['jerseyPrice'] ?? 0).toDouble(),
+        jerseyImage: List<String>.from(jerseyData['jerseyImage'] ?? []),
+        rating: (jerseyData['rating'] ?? 0.0).toDouble(),
+      );
+
+      final status = OrderStatus.values.firstWhere(
+        (e) => e.name.toLowerCase() == (data['status'] ?? '').toLowerCase(),
+        orElse: () => OrderStatus.PENDING,
+      );
+
+      final paymentMethod = PaymentMethod.values.firstWhere(
+        (e) => e.name.toLowerCase() == (data['paymentMethod'] ?? '').toLowerCase(),
+        orElse: () => PaymentMethod.CASH_ON_DELIVERY,
+      );
+
+      return OrderModel(
+        jersey: jerseyModel,
+        quantity: data['quantity'] ?? 1,
+        selectedSize: data['selectedSize'] ?? 'M',
+        fullname: data['fullname'] ?? '',
+        phoneNUmber: data['phoneNumber'] ?? '',
+        address: data['address'] ?? '',
+        city: data['city'] ?? '',
+        postalCode: data['postalCode'] ?? '',
+        totalAmount: (data['totalAmount'] ?? 0).toDouble(),
+        status: status,
+        paymentMethod: paymentMethod,
+      );
+    }).toList();
+  });
+}
+
+}
+
+

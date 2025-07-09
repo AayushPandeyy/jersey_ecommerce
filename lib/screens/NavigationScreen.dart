@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:jersey_ecommerce/screens/HomePage.dart';
+import 'package:jersey_ecommerce/screens/OrderListPage.dart';
 
 class NavigationScreen extends StatefulWidget {
   const NavigationScreen({super.key});
@@ -16,7 +17,7 @@ class _NavigationScreenState extends State<NavigationScreen>
     HomePage(),
     HomePage(),
     HomePage(),
-    HomePage(),
+    OrdersListPage(),
   ];
 
   final List<IconData> bottomBarIcons = [
@@ -24,7 +25,7 @@ class _NavigationScreenState extends State<NavigationScreen>
     Icons.search,
     Icons.add_shopping_cart,
     Icons.favorite,
-    Icons.person,
+    Icons.shopping_bag,
   ];
 
 

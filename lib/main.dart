@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:jersey_ecommerce/firebase_options.dart';
 import 'package:jersey_ecommerce/screens/NavigationScreen.dart';
 import 'package:jersey_ecommerce/screens/auth/AuthPage.dart';
+import 'package:jersey_ecommerce/screens/auth/LoginChecker.dart';
 
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,7 +22,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: AuthPage(),
+      home: LoginChecker(),
       debugShowCheckedModeBanner: false,
     );
   }

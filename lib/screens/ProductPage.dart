@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:jersey_ecommerce/models/JerseyModel.dart';
+import 'package:jersey_ecommerce/screens/CheckoutScreen.dart';
 import 'package:jersey_ecommerce/service/FirestoreService.dart';
 import 'package:jersey_ecommerce/utlitlies/Loaders.dart';
 import 'package:jersey_ecommerce/widgets/MobileImageViewer.dart';
@@ -21,15 +22,9 @@ class _ProductPageState extends State<ProductPage> {
   int quantity = 1;
   final FirestoreService firestoreService = FirestoreService();
 
-  void buyNow() async {
-    await firestoreService.addOrder(
-      FirebaseAuth.instance.currentUser!.uid, // Replace with actual user ID
-      widget.model, 
-      quantity,
-      selectedSize ?? "M",
-    );
-    Navigator.pop(context);
-    Loaders().showOrderPlacedPopup(context);
+  void buyNow(JerseyModel model, String size, int quantity) async {
+    Navigator.push(context, MaterialPageRoute(builder: (context)=> CheckoutPage(model: model, selectedSize: size, quantity: quantity)));
+    
   }
 
   @override
@@ -254,7 +249,7 @@ class _ProductPageState extends State<ProductPage> {
                               ),
                             );
                           } else {
-                            buyNow();
+                            buyNow(widget.model,selectedSize!,quantity);
                           }
                         },
                         style: ElevatedButton.styleFrom(
