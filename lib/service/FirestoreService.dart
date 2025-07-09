@@ -95,23 +95,22 @@ Future<void> addOrder(String userId, OrderModel order) async {
   });
 }
 
-   Stream<List<OrderModel>> getUserOrders(String userId) {
+Stream<List<OrderModel>> getUserOrders(String userId) {
   return FirebaseFirestore.instance
       .collection('Orders')
       .where('userId', isEqualTo: userId)
       .orderBy('timestamp', descending: true)
       .snapshots()
-      .map((QuerySnapshot snapshot) {
-    return snapshot.docs.map((doc) {
-      final data = doc.data() as Map<String, dynamic>;
+      .map((querySnapshot) {
+    return querySnapshot.docs.map((doc) {
+      final data = doc.data();
 
-      final jerseyData = data['jersey'] as Map<String, dynamic>? ?? {};
       final jerseyModel = JerseyModel(
-        jerseyTitle: jerseyData['jerseyTitle'] ?? '',
-        jerseyDescription: jerseyData['jerseyDescription'] ?? '',
-        jerseyPrice: (jerseyData['jerseyPrice'] ?? 0).toDouble(),
-        jerseyImage: List<String>.from(jerseyData['jerseyImage'] ?? []),
-        rating: (jerseyData['rating'] ?? 0.0).toDouble(),
+        jerseyTitle: data['jersey']['jerseyTitle'] ?? '',
+        jerseyDescription: data['jersey']['jerseyDescription'] ?? '',
+        jerseyPrice: (data['jersey']['jerseyPrice'] ?? 0).toDouble(),
+        jerseyImage: List<String>.from(data['jersey']['jerseyImage'] ?? []),
+        rating: (data['jersey']['rating'] ?? 0.0).toDouble(),
       );
 
       final status = OrderStatus.values.firstWhere(
@@ -125,9 +124,10 @@ Future<void> addOrder(String userId, OrderModel order) async {
       );
 
       return OrderModel(
+        id: doc.id,
         jersey: jerseyModel,
         quantity: data['quantity'] ?? 1,
-        selectedSize: data['selectedSize'] ?? 'M',
+        selectedSize: data['size'] ?? 'M',
         fullname: data['fullname'] ?? '',
         phoneNUmber: data['phoneNumber'] ?? '',
         address: data['address'] ?? '',
@@ -140,6 +140,18 @@ Future<void> addOrder(String userId, OrderModel order) async {
     }).toList();
   });
 }
+
+Future<void> updateOrderStatus(String orderId, OrderStatus newStatus) async {
+  try {
+    await FirebaseFirestore.instance
+        .collection('Orders')
+        .doc(orderId)
+        .update({'status': newStatus.name});
+  } catch (e) {
+    throw Exception('Failed to update order status: $e');
+  }
+}
+
 
 }
 

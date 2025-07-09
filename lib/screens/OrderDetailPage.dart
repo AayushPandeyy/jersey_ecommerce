@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:jersey_ecommerce/models/OrderModel.dart';
 import 'package:jersey_ecommerce/enum/OrderStatus.dart';
 import 'package:jersey_ecommerce/enum/PaymentMethod.dart';
+import 'package:jersey_ecommerce/service/FirestoreService.dart';
 
 class OrderDetailPage extends StatelessWidget {
   final OrderModel order;
@@ -509,7 +510,9 @@ class OrderDetailPage extends StatelessWidget {
                               ),
                             ),
                             TextButton(
-                              onPressed: () {
+                              onPressed: () async{
+                                await FirestoreService().updateOrderStatus(order.id!, OrderStatus.CANCELLED);
+                                Navigator.pop(context);
                                 Navigator.pop(context);
                                 // TODO: Implement cancel order logic
                               },

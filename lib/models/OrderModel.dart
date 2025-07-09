@@ -1,21 +1,23 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'package:jersey_ecommerce/enum/OrderStatus.dart';
 import 'package:jersey_ecommerce/enum/PaymentMethod.dart';
 import 'package:jersey_ecommerce/models/JerseyModel.dart';
 
 class OrderModel {
-  JerseyModel jersey;
-  int quantity;
-  String selectedSize;
-  String fullname;
-  String phoneNUmber;
-  String address;
-  String city;
-  String postalCode;
-  double totalAmount;
-  OrderStatus status;
-  PaymentMethod paymentMethod;
+  final String? id; // Firestore document ID
+  final JerseyModel jersey;
+  final int quantity;
+  final String selectedSize;
+  final String fullname;
+  final String phoneNUmber;
+  final String address;
+  final String city;
+  final String postalCode;
+  final double totalAmount;
+  final OrderStatus status;
+  final PaymentMethod paymentMethod;
+
   OrderModel({
+    this.id, // <-- new field
     required this.jersey,
     required this.quantity,
     required this.selectedSize,

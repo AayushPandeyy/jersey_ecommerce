@@ -391,11 +391,19 @@ class _CheckoutPageState extends State<CheckoutPage> {
                               ),
                             ],
                           ),
+                          Divider(
+                            color: Colors.grey.shade300,
+                            thickness: 1,
+                            height: 24,
+                          ),
+                          Text("!!! Order Once Placed Cannot Be Changed !!!",textAlign: TextAlign.center,style: GoogleFonts.allerta(
+                            fontSize: 18,color: Colors.red
+                          ),)
                         ],
                       ),
                     ),
                     
-                    const SizedBox(height: 100),
+                    const SizedBox(height: 70),
                   ],
                 ),
               ),
