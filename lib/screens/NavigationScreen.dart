@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:jersey_ecommerce/screens/FavoritesPage.dart';
 import 'package:jersey_ecommerce/screens/HomePage.dart';
 import 'package:jersey_ecommerce/screens/OrderListPage.dart';
 
@@ -16,7 +17,7 @@ class _NavigationScreenState extends State<NavigationScreen>
     HomePage(),
     HomePage(),
     HomePage(),
-    HomePage(),
+    FavoritesPage(),
     OrdersListPage(),
   ];
 

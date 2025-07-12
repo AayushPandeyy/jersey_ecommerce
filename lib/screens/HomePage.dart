@@ -4,6 +4,7 @@ import 'package:jersey_ecommerce/models/JerseyModel.dart';
 import 'package:jersey_ecommerce/models/Jerseys.dart';
 import 'package:jersey_ecommerce/screens/ProductPage.dart';
 import 'package:jersey_ecommerce/service/FirestoreService.dart';
+import 'package:jersey_ecommerce/utlitlies/GPSUsage.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -13,6 +14,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+
   final FirestoreService service = FirestoreService();
   List<String> categoryImages = [
     "https://download.logo.wine/logo/Adidas/Adidas-Logo.wine.png",
@@ -63,7 +65,7 @@ class _HomePageState extends State<HomePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 20),
-                  Center(child: _locationBar(context)),
+                  Center(child: _locationBar(context,"Gongabu Near Angle W0rld Montessori, Kathmandu")),
                   const SizedBox(height: 20),
                   _newArrivalCard(context),
 
@@ -106,7 +108,7 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-Widget _locationBar(BuildContext context) {
+Widget _locationBar(BuildContext context,String location) {
   return Container(
     width: MediaQuery.sizeOf(context).width * 0.9,
     padding: const EdgeInsets.all(12),
@@ -150,10 +152,10 @@ Widget _locationBar(BuildContext context) {
                 ),
               ),
               const SizedBox(height: 2),
-              const Text(
-                'Gongabu Chowk',
+               Text(
+                location,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 14,
                   fontWeight: FontWeight.bold,
                   color: Colors.black87,
                 ),

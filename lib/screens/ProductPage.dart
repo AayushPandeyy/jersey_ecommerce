@@ -17,15 +17,42 @@ class ProductPage extends StatefulWidget {
 }
 
 class _ProductPageState extends State<ProductPage> {
+  bool isFavorite = false;
   String? selectedSize;
+  bool isLoading = false;
+
 
   int quantity = 1;
   final FirestoreService firestoreService = FirestoreService();
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    checkIfFavorited();
+  }
 
   void buyNow(JerseyModel model, String size, int quantity) async {
     Navigator.push(context, MaterialPageRoute(builder: (context)=> CheckoutPage(model: model, selectedSize: size, quantity: quantity)));
     
   }
+
+  void checkIfFavorited() async {
+    setState(() {
+      isLoading = true;
+    });
+  try {
+    final favorited = await firestoreService.isJerseyFavorited(widget.model.jerseyId); // pass jerseyId
+    setState(() {
+      isFavorite = favorited;
+    });
+    setState(() {
+      isLoading = false;
+    });
+  } catch (e) {
+    print("Error checking favorite status: $e");
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +66,7 @@ class _ProductPageState extends State<ProductPage> {
     final sizes = ["XS", "S", "M", "L", "XL", "XXL"];
 
     return SafeArea(
-      child: Scaffold(
+      child: isLoading ? Center(child: CircularProgressIndicator(),)  : Scaffold(
         appBar: AppBar(
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
@@ -48,7 +75,24 @@ class _ProductPageState extends State<ProductPage> {
             },
           ),
           actions: [
-            IconButton(icon: const Icon(Icons.favorite), onPressed: () {}),
+            IconButton(icon:  Icon( isFavorite ? Icons.favorite : Icons.favorite_border,color: Colors.red,), 
+            onPressed: () async{
+              bool previousState = isFavorite;
+              setState(() {
+                isFavorite = !isFavorite;
+              });
+              try {
+                await FirestoreService().addJerseyToFavorites(widget.model.jerseyId, widget.model.toMap());
+              } catch (e) {
+                setState(() {
+        isFavorite = previousState;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to update favorites')),
+      );
+              }
+            }),
             IconButton(icon: const Icon(Icons.share), onPressed: () {}),
           ],
         ),

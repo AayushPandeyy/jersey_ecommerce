@@ -1,5 +1,6 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 class JerseyModel {
+  String jerseyId;
   String jerseyTitle;
   String jerseyDescription;
   List<String> jerseyImage;
@@ -7,15 +8,17 @@ class JerseyModel {
   double rating; // Added rating field
 
   JerseyModel({
+    required this.jerseyId,
     required this.jerseyTitle,
     required this.jerseyDescription,
     required this.jerseyImage,
     required this.jerseyPrice,
-    required this.rating, // Added rating to constructor
+    required this.rating,
   });
 
   factory JerseyModel.fromJson(Map<String, dynamic> json) {
     return JerseyModel(
+      jerseyId: json['jerseyId'] as String,
       jerseyTitle: json['jerseyTitle'] as String,
       jerseyDescription: json['jerseyDescription'] as String,
       jerseyImage: List<String>.from(json['jerseyImage'] as List),
@@ -37,6 +40,7 @@ class JerseyModel {
   // fromMap function
   factory JerseyModel.fromMap(Map<String, dynamic> map) {
     return JerseyModel(
+      jerseyId: map['jerseyId'] as String,
       jerseyTitle: map['jerseyTitle'] as String,
       jerseyDescription: map['jerseyDescription'] as String,
       jerseyImage: List<String>.from(map['jerseyImage'] as List),

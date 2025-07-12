@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:jersey_ecommerce/enum/OrderStatus.dart';
 import 'package:jersey_ecommerce/enum/PaymentMethod.dart';
 import 'package:jersey_ecommerce/models/OrderModel.dart';
@@ -106,6 +107,7 @@ Stream<List<OrderModel>> getUserOrders(String userId) {
       final data = doc.data();
 
       final jerseyModel = JerseyModel(
+        jerseyId: data['jersey']['jerseyId'] ?? doc.id, // Use doc.id if jerseyId is not provided
         jerseyTitle: data['jersey']['jerseyTitle'] ?? '',
         jerseyDescription: data['jersey']['jerseyDescription'] ?? '',
         jerseyPrice: (data['jersey']['jerseyPrice'] ?? 0).toDouble(),
@@ -152,6 +154,75 @@ Future<void> updateOrderStatus(String orderId, OrderStatus newStatus) async {
   }
 }
 
+Future<void> addJerseyToFavorites(String jerseyId, Map<String, dynamic> jerseyData) async {
+  try {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) throw Exception("User not logged in");
+
+    final favoritesRef = FirebaseFirestore.instance
+        .collection('Favorites')
+        .doc(user.uid)
+        .collection('Jerseys')
+        .doc(jerseyId);
+
+    await favoritesRef.set(jerseyData);
+    print("Jersey added to favorites.");
+  } catch (e) {
+    print("Failed to add jersey to favorites: $e");
+    rethrow;
+  }
+}
+
+Stream<List<Map<String, dynamic>>> getUserFavorites() {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) {
+    // Return an empty stream if not logged in
+    return const Stream.empty();
+  }
+
+  final favoritesRef = FirebaseFirestore.instance
+      .collection('Favorites')
+      .doc(user.uid)
+      .collection('Jerseys');
+
+  return favoritesRef.snapshots().map((snapshot) {
+    return snapshot.docs.map((doc) {
+      return {
+        'jerseyId': doc.id,
+        ...doc.data(),
+      };
+    }).toList();
+  });
+}
+
+Future<void> removeJerseyFromFavorites(String jerseyId) async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) throw Exception("User not logged in");
+
+  final favoritesRef = FirebaseFirestore.instance
+      .collection('Favorites')
+      .doc(user.uid)
+      .collection('Jerseys')
+      .doc(jerseyId);
+
+  await favoritesRef.delete();
+  print("Jersey removed from favorites.");
+
+
+}
+Future<bool> isJerseyFavorited(String jerseyId) async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) throw Exception("User not logged in");
+
+  final doc = await FirebaseFirestore.instance
+      .collection('Favorites')
+      .doc(user.uid)
+      .collection('Jerseys')
+      .doc(jerseyId)
+      .get();
+
+  return doc.exists;
+}
 
 }
 
