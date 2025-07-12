@@ -224,6 +224,60 @@ Future<bool> isJerseyFavorited(String jerseyId) async {
   return doc.exists;
 }
 
+Stream<List<JerseyModel>> searchJerseysStream(String query) {
+  if (query.isEmpty) {
+    return Stream.value([]);
+  }
+
+  // Fetch a broader subset, e.g., all jerseys or jerseys where jerseyTitle starts with first letter
+  // Here, we just fetch all jerseys - be careful if you have huge data.
+  return FirebaseFirestore.instance
+      .collection('Jersey')
+      .snapshots()
+      .map((snapshot) {
+    // Map docs to models
+    final allJerseys = snapshot.docs.map((doc) {
+      return JerseyModel.fromJson(doc.data() );
+    }).toList();
+
+    // Filter locally in the app for partial contains match (case-insensitive)
+    final lowerQuery = query.toLowerCase();
+    return allJerseys.where((jersey) {
+      final title = jersey.jerseyTitle.toLowerCase();
+      return title.contains(lowerQuery);
+    }).toList();
+  });
+}
+
+  
+  // Alternative search method using multiple fields
+  Stream<List<JerseyModel>> searchJerseysAdvancedStream(String query) {
+    if (query.isEmpty) {
+      return Stream.value([]);
+    }
+    
+    final lowercaseQuery = query.toLowerCase();
+    
+    return FirebaseFirestore.instance
+        .collection('Jersey')
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs
+          .map((doc) {
+            final data = doc.data();
+            return JerseyModel.fromJson(data);
+          })
+          .where((jersey) {
+            final title = jersey.jerseyTitle.toLowerCase();
+            final description = jersey.jerseyDescription.toLowerCase();
+            
+            return title.contains(lowercaseQuery) ||
+                   description.contains(lowercaseQuery);
+          })
+          .toList();
+    });
+  }
+
 }
 
 

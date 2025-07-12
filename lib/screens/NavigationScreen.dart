@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:jersey_ecommerce/screens/FavoritesPage.dart';
 import 'package:jersey_ecommerce/screens/HomePage.dart';
 import 'package:jersey_ecommerce/screens/OrderListPage.dart';
+import 'package:jersey_ecommerce/screens/SearchPage.dart';
 
 class NavigationScreen extends StatefulWidget {
   const NavigationScreen({super.key});
@@ -15,7 +16,7 @@ class _NavigationScreenState extends State<NavigationScreen>
     with TickerProviderStateMixin {
   List<Widget> pages = [
     HomePage(),
-    HomePage(),
+    SearchPage(),
     HomePage(),
     FavoritesPage(),
     OrdersListPage(),
