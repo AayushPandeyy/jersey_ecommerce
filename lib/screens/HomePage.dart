@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:jersey_ecommerce/models/JerseyModel.dart';
 import 'package:jersey_ecommerce/models/Jerseys.dart';
+import 'package:jersey_ecommerce/screens/EditShippingAddressPage.dart';
 import 'package:jersey_ecommerce/screens/ProductPage.dart';
 import 'package:jersey_ecommerce/service/FirestoreService.dart';
 import 'package:jersey_ecommerce/utlitlies/GPSUsage.dart';
@@ -32,9 +33,9 @@ class _HomePageState extends State<HomePage> {
         appBar: AppBar(
           elevation: 0,
           backgroundColor: Colors.white,
-          title: const Text(
+          title:  Text(
             'Jersey Shop',
-            style: TextStyle(
+            style: GoogleFonts.marcellus(
               fontSize: 24,
               fontWeight: FontWeight.bold,
               color: Colors.black87,
@@ -145,7 +146,7 @@ Widget _locationBar(BuildContext context,String location) {
             children: [
               Text(
                 'Send to',
-                style: TextStyle(
+                style: GoogleFonts.marcellus(
                   fontSize: 12,
                   color: Colors.grey[600],
                   fontWeight: FontWeight.w500,
@@ -154,7 +155,7 @@ Widget _locationBar(BuildContext context,String location) {
               const SizedBox(height: 2),
                Text(
                 location,
-                style: TextStyle(
+                style: GoogleFonts.marcellus(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
                   color: Colors.black87,
@@ -165,7 +166,12 @@ Widget _locationBar(BuildContext context,String location) {
         ),
         GestureDetector(
           onTap: () {
-            // Handle change location
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => EditShippingAddressPage(),
+              ),
+            );
           },
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -173,9 +179,9 @@ Widget _locationBar(BuildContext context,String location) {
               color: const Color(0xff015888),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Text(
+            child:  Text(
               'Change',
-              style: TextStyle(
+              style: GoogleFonts.marcellus(
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
@@ -261,9 +267,9 @@ Widget _newArrivalCard(BuildContext context) {
                           width: 1,
                         ),
                       ),
-                      child: const Text(
+                      child:  Text(
                         "JERSEYS",
-                        style: TextStyle(
+                        style: GoogleFonts.marcellus(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
@@ -273,9 +279,9 @@ Widget _newArrivalCard(BuildContext context) {
                     ),
                     const SizedBox(height: 12),
                     // Main title
-                    const Text(
+                     Text(
                       "New Arrival",
-                      style: TextStyle(
+                      style: GoogleFonts.marcellus(
                         fontSize: 28,
                         fontWeight: FontWeight.w800,
                         color: Colors.white,
@@ -295,7 +301,7 @@ Widget _newArrivalCard(BuildContext context) {
                         const SizedBox(width: 6),
                         Text(
                           "209 products",
-                          style: TextStyle(
+                          style: GoogleFonts.marcellus(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                             color: Colors.white.withOpacity(0.9),
@@ -325,12 +331,12 @@ Widget _newArrivalCard(BuildContext context) {
                             ),
                           ],
                         ),
-                        child: const Row(
+                        child:  Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
                               "Shop Now",
-                              style: TextStyle(
+                              style: GoogleFonts.marcellus(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 color: Color(0xff0F4C75),
@@ -522,7 +528,7 @@ Widget productCard(BuildContext context, JerseyModel jerseyModel) {
                       const SizedBox(width: 2),
                       Text(
                         jerseyModel.rating.toString(),
-                        style: TextStyle(
+                        style: GoogleFonts.marcellus(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                           color: Colors.black87,
@@ -539,14 +545,14 @@ Widget productCard(BuildContext context, JerseyModel jerseyModel) {
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Text(
               jerseyModel.jerseyTitle,
-              style: GoogleFonts.pixelifySans(fontWeight: FontWeight.bold),
+              style: GoogleFonts.marcellus(fontWeight: FontWeight.bold),
             ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Text(
               "Rs. ${jerseyModel.jerseyPrice}",
-              style: GoogleFonts.pixelifySans(fontWeight: FontWeight.bold),
+              style: GoogleFonts.marcellus(fontWeight: FontWeight.bold),
             ),
           ),
         ],

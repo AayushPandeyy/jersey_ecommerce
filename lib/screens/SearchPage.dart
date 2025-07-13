@@ -77,10 +77,7 @@ class _SearchPageState extends State<SearchPage> {
         appBar: AppBar(
           elevation: 0,
           backgroundColor: Colors.white,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios, color: Colors.black87),
-            onPressed: () => Navigator.pop(context),
-          ),
+          
           title: Container(
             height: 40,
             child: TextField(
@@ -130,7 +127,7 @@ class _SearchPageState extends State<SearchPage> {
         children: [
           Text(
             'Popular Searches',
-            style: GoogleFonts.pixelifySans(
+            style: GoogleFonts.marcellus(
               fontSize: 18,
               fontWeight: FontWeight.bold,
               color: Colors.black87,
@@ -279,7 +276,7 @@ class _SearchPageState extends State<SearchPage> {
               children: [
                 Text(
                   'Search Results',
-                  style: GoogleFonts.pixelifySans(
+                  style: GoogleFonts.marcellus(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: Colors.black87,
@@ -390,7 +387,7 @@ class _SearchPageState extends State<SearchPage> {
                   children: [
                     Text(
                       jerseyModel.jerseyTitle,
-                      style: GoogleFonts.pixelifySans(
+                      style: GoogleFonts.marcellus(
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
                         color: Colors.black87,
@@ -403,7 +400,7 @@ class _SearchPageState extends State<SearchPage> {
                       children: [
                         Text(
                           "Rs. ${jerseyModel.jerseyPrice}",
-                          style: GoogleFonts.pixelifySans(
+                          style: GoogleFonts.marcellus(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
                             color: const Color(0xff015888),
@@ -453,7 +450,7 @@ class _SearchPageState extends State<SearchPage> {
           const SizedBox(height: 24),
           Text(
             'No Results Found',
-            style: GoogleFonts.pixelifySans(
+            style: GoogleFonts.marcellus(
               fontSize: 24,
               fontWeight: FontWeight.bold,
               color: Colors.black87,
@@ -545,7 +542,7 @@ class _SearchPageState extends State<SearchPage> {
           const SizedBox(height: 24),
           Text(
             'Something went wrong',
-            style: GoogleFonts.pixelifySans(
+            style: GoogleFonts.marcellus(
               fontSize: 20,
               fontWeight: FontWeight.bold,
               color: Colors.black87,

@@ -23,13 +23,10 @@ class _FavoritesPageState extends State<FavoritesPage> {
         appBar: AppBar(
           elevation: 0,
           backgroundColor: Colors.white,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios, color: Colors.black87),
-            onPressed: () => Navigator.pop(context),
-          ),
-          title: const Text(
+          
+          title:  Text(
             'My Favorites',
-            style: TextStyle(
+            style: GoogleFonts.marcellus(
               fontSize: 24,
               fontWeight: FontWeight.bold,
               color: Colors.black87,
@@ -126,7 +123,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
               children: [
                 Text(
                   'Your Favorites',
-                  style: GoogleFonts.pixelifySans(
+                  style: GoogleFonts.marcellus(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: Colors.black87,
@@ -135,7 +132,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                 const SizedBox(height: 4),
                 Text(
                   '$count item${count == 1 ? '' : 's'} saved',
-                  style: TextStyle(
+                  style: GoogleFonts.marcellus(
                     fontSize: 14,
                     color: Colors.grey[600],
                     fontWeight: FontWeight.w500,
@@ -155,9 +152,9 @@ class _FavoritesPageState extends State<FavoritesPage> {
                 color: Colors.red.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Text(
+              child:  Text(
                 'Clear All',
-                style: TextStyle(
+                style: GoogleFonts.marcellus(
                   color: Colors.red,
                   fontWeight: FontWeight.w600,
                   fontSize: 12,
@@ -269,7 +266,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                           const SizedBox(width: 2),
                           Text(
                             jerseyModel.rating.toString(),
-                            style: const TextStyle(
+                            style:  GoogleFonts.marcellus(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                               color: Colors.black87,
@@ -292,7 +289,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                   children: [
                     Text(
                       jerseyModel.jerseyTitle,
-                      style: GoogleFonts.pixelifySans(
+                      style: GoogleFonts.marcellus(
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
                         color: Colors.black87,
@@ -306,7 +303,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                       children: [
                         Text(
                           "Rs. ${jerseyModel.jerseyPrice}",
-                          style: GoogleFonts.pixelifySans(
+                          style: GoogleFonts.marcellus(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
                             color: const Color(0xff015888),
@@ -359,7 +356,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
           const SizedBox(height: 24),
           Text(
             'No Favorites Yet',
-            style: GoogleFonts.pixelifySans(
+            style: GoogleFonts.marcellus(
               fontSize: 24,
               fontWeight: FontWeight.bold,
               color: Colors.black87,
@@ -369,7 +366,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
           Text(
             'Start adding jerseys to your favorites\nto see them here!',
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: GoogleFonts.marcellus(
               fontSize: 16,
               color: Colors.grey[600],
               height: 1.5,
@@ -396,9 +393,9 @@ class _FavoritesPageState extends State<FavoritesPage> {
                   ),
                 ],
               ),
-              child: const Text(
+              child:  Text(
                 'Browse Jerseys',
-                style: TextStyle(
+                style: GoogleFonts.marcellus(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
                   fontSize: 16,
@@ -431,7 +428,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
           const SizedBox(height: 24),
           Text(
             'Something went wrong',
-            style: GoogleFonts.pixelifySans(
+            style: GoogleFonts.marcellus(
               fontSize: 20,
               fontWeight: FontWeight.bold,
               color: Colors.black87,
@@ -441,7 +438,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
           Text(
             'Unable to load your favorites.\nPlease try again later.',
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: GoogleFonts.marcellus(
               fontSize: 16,
               color: Colors.grey[600],
               height: 1.5,
@@ -463,9 +460,9 @@ class _FavoritesPageState extends State<FavoritesPage> {
                 color: const Color(0xff015888),
                 borderRadius: BorderRadius.circular(25),
               ),
-              child: const Text(
+              child:  Text(
                 'Retry',
-                style: TextStyle(
+                style: GoogleFonts.marcellus(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
                   fontSize: 16,
@@ -488,20 +485,20 @@ class _FavoritesPageState extends State<FavoritesPage> {
           ),
           title: Text(
             'Remove from Favorites',
-            style: GoogleFonts.pixelifySans(
+            style: GoogleFonts.marcellus(
               fontWeight: FontWeight.bold,
             ),
           ),
           content: Text(
             'Are you sure you want to remove "${jersey.jerseyTitle}" from your favorites?',
-            style: const TextStyle(fontSize: 16),
+            style:  GoogleFonts.marcellus(fontSize: 16),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text(
+              child:  Text(
                 'Cancel',
-                style: TextStyle(color: Colors.grey),
+                style: GoogleFonts.marcellus(color: Colors.grey),
               ),
             ),
             TextButton(
@@ -519,9 +516,9 @@ class _FavoritesPageState extends State<FavoritesPage> {
                   ),
                 );
               },
-              child: const Text(
+              child:  Text(
                 'Remove',
-                style: TextStyle(color: Colors.red),
+                style: GoogleFonts.marcellus(color: Colors.red),
               ),
             ),
           ],
@@ -540,20 +537,20 @@ class _FavoritesPageState extends State<FavoritesPage> {
           ),
           title: Text(
             'Clear All Favorites',
-            style: GoogleFonts.pixelifySans(
+            style: GoogleFonts.marcellus(
               fontWeight: FontWeight.bold,
             ),
           ),
-          content: const Text(
+          content:  Text(
             'Are you sure you want to remove all jerseys from your favorites? This action cannot be undone.',
-            style: TextStyle(fontSize: 16),
+            style: GoogleFonts.marcellus(fontSize: 16),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text(
+              child:  Text(
                 'Cancel',
-                style: TextStyle(color: Colors.grey),
+                style: GoogleFonts.marcellus(color: Colors.grey),
               ),
             ),
             TextButton(
@@ -569,9 +566,9 @@ class _FavoritesPageState extends State<FavoritesPage> {
                   ),
                 );
               },
-              child: const Text(
+              child:  Text(
                 'Clear All',
-                style: TextStyle(color: Colors.red),
+                style: GoogleFonts.marcellus(color: Colors.red),
               ),
             ),
           ],

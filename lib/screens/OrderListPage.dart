@@ -61,7 +61,7 @@ class OrdersListPage extends StatelessWidget {
         appBar: AppBar(
           title: Text(
             'My Orders',
-            style: GoogleFonts.russoOne(
+            style: GoogleFonts.marcellus(
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
@@ -95,7 +95,7 @@ class OrdersListPage extends StatelessWidget {
                     const SizedBox(height: 16),
                     Text(
                       'No orders yet',
-                      style: GoogleFonts.russoOne(
+                      style: GoogleFonts.marcellus(
                         fontSize: 20,
                         color: Colors.grey.shade600,
                       ),
@@ -148,7 +148,7 @@ class OrdersListPage extends StatelessWidget {
                               children: [
                                 Text(
                                   'Order #${index + 1}',
-                                  style: GoogleFonts.russoOne(
+                                  style: GoogleFonts.marcellus(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -193,7 +193,7 @@ class OrdersListPage extends StatelessWidget {
                                     children: [
                                       Text(
                                         order.jersey.jerseyTitle,
-                                        style: GoogleFonts.russoOne(
+                                        style: GoogleFonts.marcellus(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w600,
                                         ),
@@ -225,7 +225,7 @@ class OrdersListPage extends StatelessWidget {
                                   children: [
                                     Text(
                                       'Rs. ${order.totalAmount.toStringAsFixed(0)}',
-                                      style: GoogleFonts.russoOne(
+                                      style: GoogleFonts.marcellus(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
                                       ),

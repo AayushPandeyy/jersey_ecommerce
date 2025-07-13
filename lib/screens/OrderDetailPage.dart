@@ -97,7 +97,7 @@ class OrderDetailPage extends StatelessWidget {
         appBar: AppBar(
           title: Text(
             'Order Details',
-            style: GoogleFonts.russoOne(
+            style: GoogleFonts.marcellus(
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
@@ -140,7 +140,7 @@ class OrderDetailPage extends StatelessWidget {
                       children: [
                         Text(
                           getStatusText(order.status),
-                          style: GoogleFonts.russoOne(
+                          style: GoogleFonts.marcellus(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: getStatusColor(order.status),
@@ -169,7 +169,7 @@ class OrderDetailPage extends StatelessWidget {
               if (order.status != OrderStatus.CANCELLED) ...[
                 Text(
                   'Order Tracking',
-                  style: GoogleFonts.russoOne(
+                  style: GoogleFonts.marcellus(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
@@ -219,7 +219,7 @@ class OrderDetailPage extends StatelessWidget {
                             children: [
                               Text(
                                 step['title'],
-                                style: GoogleFonts.russoOne(
+                                style: GoogleFonts.marcellus(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                   color: isCompleted ? Colors.black : Colors.grey.shade600,
@@ -247,7 +247,7 @@ class OrderDetailPage extends StatelessWidget {
               // Product Details
               Text(
                 'Product Details',
-                style: GoogleFonts.russoOne(
+                style: GoogleFonts.marcellus(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
@@ -278,7 +278,7 @@ class OrderDetailPage extends StatelessWidget {
                         children: [
                           Text(
                             order.jersey.jerseyTitle,
-                            style: GoogleFonts.russoOne(
+                            style: GoogleFonts.marcellus(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
@@ -313,7 +313,7 @@ class OrderDetailPage extends StatelessWidget {
                           const SizedBox(height: 4),
                           Text(
                             'Rs. ${order.jersey.jerseyPrice}',
-                            style: GoogleFonts.russoOne(
+                            style: GoogleFonts.marcellus(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
@@ -330,7 +330,7 @@ class OrderDetailPage extends StatelessWidget {
               // Shipping Information
               Text(
                 'Shipping Information',
-                style: GoogleFonts.russoOne(
+                style: GoogleFonts.marcellus(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
@@ -390,7 +390,7 @@ class OrderDetailPage extends StatelessWidget {
               // Payment Information
               Text(
                 'Payment Information',
-                style: GoogleFonts.russoOne(
+                style: GoogleFonts.marcellus(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
@@ -463,14 +463,14 @@ class OrderDetailPage extends StatelessWidget {
                       children: [
                         Text(
                           'Total Amount',
-                          style: GoogleFonts.russoOne(
+                          style: GoogleFonts.marcellus(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         Text(
                           'Rs. ${order.totalAmount.toStringAsFixed(0)}',
-                          style: GoogleFonts.russoOne(
+                          style: GoogleFonts.marcellus(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
@@ -495,7 +495,7 @@ class OrderDetailPage extends StatelessWidget {
                         builder: (context) => AlertDialog(
                           title: Text(
                             'Cancel Order',
-                            style: GoogleFonts.russoOne(),
+                            style: GoogleFonts.marcellus(),
                           ),
                           content: Text(
                             'Are you sure you want to cancel this order?',
@@ -534,7 +534,7 @@ class OrderDetailPage extends StatelessWidget {
                     ),
                     child: Text(
                       'Cancel Order',
-                      style: GoogleFonts.russoOne(
+                      style: GoogleFonts.marcellus(
                         fontSize: 16,
                         color: Colors.white,
                       ),
@@ -558,7 +558,7 @@ class OrderDetailPage extends StatelessWidget {
                     ),
                     child: Text(
                       'Reorder',
-                      style: GoogleFonts.russoOne(
+                      style: GoogleFonts.marcellus(
                         fontSize: 16,
                         color: Colors.white,
                       ),

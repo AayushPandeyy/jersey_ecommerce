@@ -115,7 +115,7 @@ class _ProductPageState extends State<ProductPage> {
                         const SizedBox(width: 8),
                         Text(
                           widget.model.rating.toString(),
-                          style: GoogleFonts.robotoSlab(fontSize: 16),
+                          style: GoogleFonts.marcellus(fontSize: 16),
                         ),
                       ],
                     ),
@@ -132,7 +132,7 @@ class _ProductPageState extends State<ProductPage> {
                             padding: const EdgeInsets.symmetric(horizontal: 8),
                             child: Text(
                               widget.model.jerseyTitle,
-                              style: GoogleFonts.russoOne(
+                              style: GoogleFonts.marcellus(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 20,
                               ),
@@ -143,7 +143,7 @@ class _ProductPageState extends State<ProductPage> {
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           child: Text(
                             "Rs. ${widget.model.jerseyPrice}",
-                            style: GoogleFonts.russoOne(
+                            style: GoogleFonts.marcellus(
                               fontWeight: FontWeight.bold,
                               fontSize: 20,
                             ),
@@ -156,7 +156,7 @@ class _ProductPageState extends State<ProductPage> {
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       child: Text(
                         widget.model.jerseyDescription,
-                        style: GoogleFonts.robotoSlab(fontSize: 16),
+                        style: GoogleFonts.marcellus(fontSize: 16),
                         textAlign: TextAlign.justify,
                       ),
                     ),
@@ -169,7 +169,7 @@ class _ProductPageState extends State<ProductPage> {
                       children: [
                         Text(
                           "Quantity",
-                          style: GoogleFonts.robotoSlab(fontSize: 16),
+                          style: GoogleFonts.marcellus(fontSize: 16),
                         ),
                         Spacer(),
                         Row(
@@ -184,7 +184,7 @@ class _ProductPageState extends State<ProductPage> {
                             ),
                             Text(
                               quantity.toString(),
-                              style: GoogleFonts.robotoSlab(fontSize: 16),
+                              style: GoogleFonts.marcellus(fontSize: 16),
                             ),
                             IconButton(
                               icon: const Icon(Icons.add),
@@ -210,7 +210,7 @@ class _ProductPageState extends State<ProductPage> {
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           child: Text(
                             "Select a size",
-                            style: GoogleFonts.robotoSlab(
+                            style: GoogleFonts.marcellus(
                               fontSize: 16,
                               color: Colors.grey,
                             ),
@@ -220,7 +220,7 @@ class _ProductPageState extends State<ProductPage> {
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           child: Text(
                             "Size Guide",
-                            style: GoogleFonts.robotoSlab(
+                            style: GoogleFonts.marcellus(
                               fontSize: 16,
                               decoration: TextDecoration.underline,
                               decorationThickness: 1,
@@ -274,7 +274,7 @@ class _ProductPageState extends State<ProductPage> {
                         child: Text(
                           "Add to Cart\nRs. ${widget.model.jerseyPrice * quantity}",
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.russoOne(
+                          style: GoogleFonts.marcellus(
                             fontSize: 16,
                             color: Colors.white,
                           ),
@@ -305,7 +305,7 @@ class _ProductPageState extends State<ProductPage> {
                         ),
                         child: Text(
                           "Buy Now\nRs. ${widget.model.jerseyPrice * quantity}",
-                          style: GoogleFonts.russoOne(
+                          style: GoogleFonts.marcellus(
                             fontSize: 16,
                             color: Colors.white,
                           ),
