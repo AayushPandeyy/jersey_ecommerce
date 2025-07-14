@@ -20,6 +20,18 @@ class FirestoreService {
     });
   }
 
+  Future<void> updateUserByEmail(String email, Map<String, dynamic> updatedData) async {
+  final querySnapshot = await FirebaseFirestore.instance
+      .collection('Users')
+      .where('email', isEqualTo: email)
+      .get();
+
+  for (final doc in querySnapshot.docs) {
+    await doc.reference.update(updatedData);
+  }
+}
+
+
   Future<void> addUserToDatabase(
       String uid, email, fullname, phoneNumber) async {
     await FirebaseFirestore.instance.collection("Users").doc(uid).set({
