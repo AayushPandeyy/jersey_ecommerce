@@ -73,377 +73,382 @@ class _CheckoutPageState extends State<CheckoutPage> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            'Checkout',
-            style: GoogleFonts.russoOne(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
+      child: StreamBuilder(
+        stream: FirestoreService().getUserDataByEmail(FirebaseAuth.instance.currentUser!.email!),
+        builder: (context, asyncSnapshot) {
+          return Scaffold(
+            appBar: AppBar(
+              title: Text(
+                'Checkout',
+                style: GoogleFonts.russoOne(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => Navigator.pop(context),
+              ),
             ),
-          ),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
-        body: Form(
-          key: _formKey,
-          child: Stack(
-            children: [
-              SingleChildScrollView(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Order Summary
-                    Text(
-                      'Order Summary',
-                      style: GoogleFonts.russoOne(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade300),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              widget.model.jerseyImage[0],
-                              width: 80,
-                              height: 80,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  widget.model.jerseyTitle,
-                                  style: GoogleFonts.russoOne(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Size: ${widget.selectedSize}',
-                                  style: GoogleFonts.robotoSlab(
-                                    fontSize: 14,
-                                    color: Colors.grey.shade600,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Quantity: ${widget.quantity}',
-                                  style: GoogleFonts.robotoSlab(
-                                    fontSize: 14,
-                                    color: Colors.grey.shade600,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Rs. ${widget.model.jerseyPrice}',
-                                  style: GoogleFonts.russoOne(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    
-                    const SizedBox(height: 24),
-                    
-                    // Shipping Information
-                    Text(
-                      'Shipping Information',
-                      style: GoogleFonts.russoOne(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: InputDecoration(
-                        labelText: 'Full Name',
-                        labelStyle: GoogleFonts.robotoSlab(),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your full name';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    
-                    TextFormField(
-                      controller: _phoneController,
-                      decoration: InputDecoration(
-                        labelText: 'Phone Number',
-                        labelStyle: GoogleFonts.robotoSlab(),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      keyboardType: TextInputType.phone,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your phone number';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    
-                    TextFormField(
-                      controller: _addressController,
-                      decoration: InputDecoration(
-                        labelText: 'Address',
-                        labelStyle: GoogleFonts.robotoSlab(),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      maxLines: 3,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your address';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    
-                    Row(
+            body: Form(
+              key: _formKey,
+              child: Stack(
+                children: [
+                  SingleChildScrollView(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _cityController,
-                            decoration: InputDecoration(
-                              labelText: 'City',
-                              labelStyle: GoogleFonts.robotoSlab(),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter city';
-                              }
-                              return null;
-                            },
+                        // Order Summary
+                        Text(
+                          'Order Summary',
+                          style: GoogleFonts.russoOne(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: TextFormField(
-                            controller: _postalCodeController,
-                            decoration: InputDecoration(
-                              labelText: 'Postal Code',
-                              labelStyle: GoogleFonts.robotoSlab(),
-                              border: OutlineInputBorder(
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.shade300),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              ClipRRect(
                                 borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  widget.model.jerseyImage[0],
+                                  width: 80,
+                                  height: 80,
+                                  fit: BoxFit.cover,
+                                ),
                               ),
-                            ),
-                            keyboardType: TextInputType.number,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter postal code';
-                              }
-                              return null;
-                            },
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      widget.model.jerseyTitle,
+                                      style: GoogleFonts.russoOne(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Size: ${widget.selectedSize}',
+                                      style: GoogleFonts.robotoSlab(
+                                        fontSize: 14,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Quantity: ${widget.quantity}',
+                                      style: GoogleFonts.robotoSlab(
+                                        fontSize: 14,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Rs. ${widget.model.jerseyPrice}',
+                                      style: GoogleFonts.russoOne(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                         ),
+                        
+                        const SizedBox(height: 24),
+                        
+                        // Shipping Information
+                        Text(
+                          'Shipping Information',
+                          style: GoogleFonts.russoOne(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        
+                        TextFormField(
+                          controller: _nameController,
+                          decoration: InputDecoration(
+                            labelText: 'Full Name',
+                            labelStyle: GoogleFonts.robotoSlab(),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your full name';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        
+                        TextFormField(
+                          controller: _phoneController,
+                          decoration: InputDecoration(
+                            labelText: 'Phone Number',
+                            labelStyle: GoogleFonts.robotoSlab(),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          keyboardType: TextInputType.phone,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your phone number';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        
+                        TextFormField(
+                          controller: _addressController,
+                          decoration: InputDecoration(
+                            labelText: 'Address',
+                            labelStyle: GoogleFonts.robotoSlab(),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          maxLines: 3,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your address';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                controller: _cityController,
+                                decoration: InputDecoration(
+                                  labelText: 'City',
+                                  labelStyle: GoogleFonts.robotoSlab(),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter city';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: TextFormField(
+                                controller: _postalCodeController,
+                                decoration: InputDecoration(
+                                  labelText: 'Postal Code',
+                                  labelStyle: GoogleFonts.robotoSlab(),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                keyboardType: TextInputType.number,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter postal code';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        
+                        const SizedBox(height: 24),
+                        
+                        // Payment Method
+                        Text(
+                          'Payment Method',
+                          style: GoogleFonts.russoOne(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        
+                        Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.shade300),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Column(
+                            children: [
+                              RadioListTile<String>(
+                                title: Text(
+                                  'Cash on Delivery',
+                                  style: GoogleFonts.robotoSlab(),
+                                ),
+                                value: 'Cash on Delivery',
+                                groupValue: selectedPaymentMethod,
+                                onChanged: (value) {
+                                  setState(() {
+                                    selectedPaymentMethod = value!;
+                                  });
+                                },
+                              ),
+                              Divider(
+                                height: 1,
+                                color: Colors.grey.shade300,
+                              ),
+                              RadioListTile<String>(
+                                title: Text(
+                                  'Online Payment',
+                                  style: GoogleFonts.robotoSlab(),
+                                ),
+                                value: 'Online Payment',
+                                groupValue: selectedPaymentMethod,
+                                onChanged: (value) {
+                                  setState(() {
+                                    selectedPaymentMethod = value!;
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 24),
+                        
+                        // Order Total
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Subtotal',
+                                    style: GoogleFonts.robotoSlab(fontSize: 16),
+                                  ),
+                                  Text(
+                                    'Rs. ${subtotal.toStringAsFixed(0)}',
+                                    style: GoogleFonts.robotoSlab(fontSize: 16),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Delivery Fee',
+                                    style: GoogleFonts.robotoSlab(fontSize: 16),
+                                  ),
+                                  Text(
+                                    'Rs. ${deliveryFee.toStringAsFixed(0)}',
+                                    style: GoogleFonts.robotoSlab(fontSize: 16),
+                                  ),
+                                ],
+                              ),
+                              Divider(
+                                color: Colors.grey.shade300,
+                                thickness: 1,
+                                height: 24,
+                              ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Total',
+                                    style: GoogleFonts.russoOne(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Rs. ${total.toStringAsFixed(0)}',
+                                    style: GoogleFonts.russoOne(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Divider(
+                                color: Colors.grey.shade300,
+                                thickness: 1,
+                                height: 24,
+                              ),
+                              Text("!!! Order Once Placed Cannot Be Changed !!!",textAlign: TextAlign.center,style: GoogleFonts.allerta(
+                                fontSize: 18,color: Colors.red
+                              ),)
+                            ],
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 70),
                       ],
                     ),
-                    
-                    const SizedBox(height: 24),
-                    
-                    // Payment Method
-                    Text(
-                      'Payment Method',
-                      style: GoogleFonts.russoOne(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    
-                    Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade300),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Column(
-                        children: [
-                          RadioListTile<String>(
-                            title: Text(
-                              'Cash on Delivery',
-                              style: GoogleFonts.robotoSlab(),
-                            ),
-                            value: 'Cash on Delivery',
-                            groupValue: selectedPaymentMethod,
-                            onChanged: (value) {
-                              setState(() {
-                                selectedPaymentMethod = value!;
-                              });
-                            },
-                          ),
-                          Divider(
-                            height: 1,
-                            color: Colors.grey.shade300,
-                          ),
-                          RadioListTile<String>(
-                            title: Text(
-                              'Online Payment',
-                              style: GoogleFonts.robotoSlab(),
-                            ),
-                            value: 'Online Payment',
-                            groupValue: selectedPaymentMethod,
-                            onChanged: (value) {
-                              setState(() {
-                                selectedPaymentMethod = value!;
-                              });
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                    
-                    const SizedBox(height: 24),
-                    
-                    // Order Total
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade50,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Column(
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Subtotal',
-                                style: GoogleFonts.robotoSlab(fontSize: 16),
-                              ),
-                              Text(
-                                'Rs. ${subtotal.toStringAsFixed(0)}',
-                                style: GoogleFonts.robotoSlab(fontSize: 16),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Delivery Fee',
-                                style: GoogleFonts.robotoSlab(fontSize: 16),
-                              ),
-                              Text(
-                                'Rs. ${deliveryFee.toStringAsFixed(0)}',
-                                style: GoogleFonts.robotoSlab(fontSize: 16),
-                              ),
-                            ],
-                          ),
-                          Divider(
-                            color: Colors.grey.shade300,
-                            thickness: 1,
-                            height: 24,
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Total',
-                                style: GoogleFonts.russoOne(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Text(
-                                'Rs. ${total.toStringAsFixed(0)}',
-                                style: GoogleFonts.russoOne(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Divider(
-                            color: Colors.grey.shade300,
-                            thickness: 1,
-                            height: 24,
-                          ),
-                          Text("!!! Order Once Placed Cannot Be Changed !!!",textAlign: TextAlign.center,style: GoogleFonts.allerta(
-                            fontSize: 18,color: Colors.red
-                          ),)
-                        ],
-                      ),
-                    ),
-                    
-                    const SizedBox(height: 70),
-                  ],
-                ),
-              ),
-              
-              // Place Order Button
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  color: Colors.white,
-                  child: ElevatedButton(
-                    onPressed: (){
-                      isLoading ? null : placeOrder(OrderModel(status:OrderStatus.PENDING,jersey: widget.model, quantity: widget.quantity, selectedSize: widget.selectedSize, fullname: _nameController.text, phoneNUmber: _phoneController.text, address: _addressController.text, city: _cityController.text, postalCode: _postalCodeController.text, totalAmount: total,paymentMethod: selectedPaymentMethod == "Cash on Delivery" ? PaymentMethod.CASH_ON_DELIVERY : PaymentMethod.ONLINE_PAYMENT ));
-                    },
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      backgroundColor: Colors.green.shade700,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: isLoading
-                        ? const CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                          )
-                        : Text(
-                            'Place Order - Rs. ${total.toStringAsFixed(0)}',
-                            style: GoogleFonts.russoOne(
-                              fontSize: 16,
-                              color: Colors.white,
-                            ),
-                          ),
                   ),
-                ),
+                  
+                  // Place Order Button
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      color: Colors.white,
+                      child: ElevatedButton(
+                        onPressed: (){
+                          isLoading ? null : placeOrder(OrderModel(status:OrderStatus.PENDING,jersey: widget.model, quantity: widget.quantity, selectedSize: widget.selectedSize, fullname: _nameController.text, phoneNUmber: _phoneController.text, address: _addressController.text, city: _cityController.text, postalCode: _postalCodeController.text, totalAmount: total,paymentMethod: selectedPaymentMethod == "Cash on Delivery" ? PaymentMethod.CASH_ON_DELIVERY : PaymentMethod.ONLINE_PAYMENT ));
+                        },
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          backgroundColor: Colors.green.shade700,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: isLoading
+                            ? const CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              )
+                            : Text(
+                                'Place Order - Rs. ${total.toStringAsFixed(0)}',
+                                style: GoogleFonts.russoOne(
+                                  fontSize: 16,
+                                  color: Colors.white,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        }
       ),
     );
   }

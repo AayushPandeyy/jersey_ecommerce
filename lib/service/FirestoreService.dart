@@ -155,6 +155,52 @@ Stream<List<OrderModel>> getUserOrders(String userId) {
   });
 }
 
+Stream<List<OrderModel>> getOrdersStream() {
+  return FirebaseFirestore.instance
+      .collection('Orders')
+      .orderBy('timestamp', descending: true)
+      .snapshots()
+      .map((querySnapshot) {
+    return querySnapshot.docs.map((doc) {
+      final data = doc.data();
+
+      final jerseyModel = JerseyModel(
+        jerseyId: data['jersey']['jerseyId'] ?? doc.id, // Use doc.id if jerseyId is not provided
+        jerseyTitle: data['jersey']['jerseyTitle'] ?? '',
+        jerseyDescription: data['jersey']['jerseyDescription'] ?? '',
+        jerseyPrice: (data['jersey']['jerseyPrice'] ?? 0).toDouble(),
+        jerseyImage: List<String>.from(data['jersey']['jerseyImage'] ?? []),
+        rating: (data['jersey']['rating'] ?? 0.0).toDouble(),
+      );
+
+      final status = OrderStatus.values.firstWhere(
+        (e) => e.name.toLowerCase() == (data['status'] ?? '').toLowerCase(),
+        orElse: () => OrderStatus.PENDING,
+      );
+
+      final paymentMethod = PaymentMethod.values.firstWhere(
+        (e) => e.name.toLowerCase() == (data['paymentMethod'] ?? '').toLowerCase(),
+        orElse: () => PaymentMethod.CASH_ON_DELIVERY,
+      );
+
+      return OrderModel(
+        id: doc.id,
+        jersey: jerseyModel,
+        quantity: data['quantity'] ?? 1,
+        selectedSize: data['size'] ?? 'M',
+        fullname: data['fullname'] ?? '',
+        phoneNUmber: data['phoneNumber'] ?? '',
+        address: data['address'] ?? '',
+        city: data['city'] ?? '',
+        postalCode: data['postalCode'] ?? '',
+        totalAmount: (data['totalAmount'] ?? 0).toDouble(),
+        status: status,
+        paymentMethod: paymentMethod,
+      );
+    }).toList();
+  });
+}
+
 Future<void> updateOrderStatus(String orderId, OrderStatus newStatus) async {
   try {
     await FirebaseFirestore.instance

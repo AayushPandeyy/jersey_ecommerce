@@ -1,7 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:jersey_ecommerce/screens/NavigationScreen.dart';
+import 'package:jersey_ecommerce/screens/admin/AdminDashboard.dart';
+import 'package:jersey_ecommerce/screens/admin/AdminNavigationScreen.dart';
 import 'package:jersey_ecommerce/screens/auth/AuthPage.dart';
 
 class LoginChecker extends StatelessWidget {
@@ -26,7 +27,7 @@ class LoginChecker extends StatelessWidget {
           // Check if user data is available
           if (snapshot.hasData) {
             // If user is authenticated, navigate to MainPage
-            return const NavigationScreen();
+            return  AdminNavigationScreen();
           } else {
             // If user is not authenticated, navigate to SignInScreen
             return const AuthPage();
