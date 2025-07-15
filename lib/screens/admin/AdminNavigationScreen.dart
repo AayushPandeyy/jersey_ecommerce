@@ -4,6 +4,7 @@ import 'package:jersey_ecommerce/screens/FavoritesPage.dart';
 import 'package:jersey_ecommerce/screens/HomePage.dart';
 import 'package:jersey_ecommerce/screens/OrderListPage.dart';
 import 'package:jersey_ecommerce/screens/SearchPage.dart';
+import 'package:jersey_ecommerce/screens/admin/AddJerseyScreen.dart';
 import 'package:jersey_ecommerce/screens/admin/AdminDashboard.dart';
 import 'package:jersey_ecommerce/screens/admin/AdminSettingsScreen.dart';
 import 'package:jersey_ecommerce/screens/admin/ViewJerseyScreen.dart';
@@ -20,8 +21,8 @@ class _AdminNavigationScreenState extends State<AdminNavigationScreen>
     with TickerProviderStateMixin {
   List<Widget> pages = [
     AdminDashboardPage(),
-    ViewJerseyScreen(),
-    ViewOrdersScreen(),
+    ViewJerseysPage(),
+    ViewOrdersPage(),
     AdminSettingsScreen(),
   ];
 
