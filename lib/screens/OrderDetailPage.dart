@@ -1,5 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:jersey_ecommerce/enum/PaymentStatus.dart';
 import 'package:jersey_ecommerce/models/OrderModel.dart';
 import 'package:jersey_ecommerce/enum/OrderStatus.dart';
 import 'package:jersey_ecommerce/enum/PaymentMethod.dart';
@@ -21,8 +23,7 @@ class OrderDetailPage extends StatelessWidget {
         return Colors.green;
       case OrderStatus.CANCELLED:
         return Colors.red;
-      default:
-        return Colors.grey;
+
     }
   }
 
@@ -36,8 +37,7 @@ class OrderDetailPage extends StatelessWidget {
         return 'DELIVERED';
       case OrderStatus.CANCELLED:
         return 'CANCELLED';
-      default:
-        return 'Unknown';
+
     }
   }
 
@@ -47,8 +47,7 @@ class OrderDetailPage extends StatelessWidget {
         return 'Cash on Delivery';
       case PaymentMethod.ONLINE_PAYMENT:
         return 'Online Payment';
-      default:
-        return 'Unknown';
+
     }
   }
 
@@ -430,6 +429,30 @@ class OrderDetailPage extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
+                          'Payment Status',
+                          style: GoogleFonts.robotoSlab(fontSize: 16),
+                        ),
+                        Text(
+                          order.paymentStatus.name,
+                          style: GoogleFonts.robotoSlab(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: order.paymentStatus == PaymentStatus.PAID
+                                ? Colors.green
+                                : Colors.red,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Divider(
+                      color: Colors.grey.shade300,
+                      thickness: 1,
+                      height: 24,
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
                           'Subtotal',
                           style: GoogleFonts.robotoSlab(fontSize: 16),
                         ),
@@ -545,9 +568,15 @@ class OrderDetailPage extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {
-                      // TODO: Implement reorder functionality
+                    onPressed: () async{
+                      await FirestoreService().addOrder(FirebaseAuth.instance.currentUser!.uid, order);
                       Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('The reorder has been placed successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
                     },
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
