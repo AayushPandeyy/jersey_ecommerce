@@ -1,0 +1,482 @@
+import 'package:flutter/material.dart';
+import 'package:jersey_ecommerce/enum/OrderStatus.dart';
+import 'package:jersey_ecommerce/models/OrderModel.dart';
+
+class AdminOrderDetailsPage extends StatefulWidget {
+  final OrderModel order;
+
+  const AdminOrderDetailsPage({Key? key, required this.order})
+    : super(key: key);
+
+  @override
+  State<AdminOrderDetailsPage> createState() => _AdminOrderDetailsPageState();
+}
+
+class _AdminOrderDetailsPageState extends State<AdminOrderDetailsPage> {
+  late OrderModel order;
+
+  @override
+  void initState() {
+    super.initState();
+    order = widget.order;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.grey[50],
+      appBar: AppBar(
+        title: const Text('Order Details'),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
+        actions: [
+          IconButton(
+            onPressed: () => _showStatusUpdateDialog(order),
+            icon: const Icon(Icons.edit),
+            tooltip: 'Update Status',
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Order Status Card
+            _buildStatusCard(),
+            const SizedBox(height: 16),
+
+            // Jersey Information Card
+            _buildJerseyInfoCard(),
+            const SizedBox(height: 16),
+
+            // Customer Information Card
+            _buildCustomerInfoCard(),
+            const SizedBox(height: 16),
+
+            // Payment Information Card
+            _buildPaymentInfoCard(),
+            const SizedBox(height: 24),
+
+            // Update Status Button
+            _buildUpdateStatusButton(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusCard() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Order Status',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                GestureDetector(
+                  onTap: () => _showStatusUpdateDialog(order),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _getStatusColor(order.status).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(25),
+                      border: Border.all(
+                        color: _getStatusColor(order.status).withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: _getStatusColor(order.status),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          order.status.toString().split('.').last.toUpperCase(),
+                          style: TextStyle(
+                            color: _getStatusColor(order.status),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.edit,
+                          size: 14,
+                          color: _getStatusColor(order.status),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Order ID: ${order.id ?? 'N/A'}',
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            ),
+            if (order.orderDate != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                'Order Date: ${_formatDate(order.orderDate!)}',
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildJerseyInfoCard() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Jersey Information',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            _buildDetailRow('Name', order.jersey.jerseyTitle),
+            _buildDetailRow(
+              'Price',
+              '\$${order.jersey.jerseyPrice.toStringAsFixed(2)}',
+            ),
+            _buildDetailRow('Quantity', '${order.quantity}'),
+            _buildDetailRow('Size', order.selectedSize),
+            const Divider(height: 20),
+            _buildDetailRow(
+              'Total Amount',
+              '\$${order.totalAmount.toStringAsFixed(2)}',
+              isTotal: true,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCustomerInfoCard() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Customer Information',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            _buildDetailRow('Name', order.fullname),
+            _buildDetailRow('Phone', order.phoneNUmber),
+            _buildDetailRow('Address', order.address),
+            _buildDetailRow('City', order.city),
+            _buildDetailRow('Postal Code', order.postalCode),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPaymentInfoCard() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Payment Information',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            _buildDetailRow(
+              'Method',
+              order.paymentMethod.toString().split('.').last.toUpperCase(),
+            ),
+            _buildDetailRow(
+              'Amount',
+              '\$${order.totalAmount.toStringAsFixed(2)}',
+            ),
+            _buildDetailRow('Status', 'Paid', valueColor: Colors.green),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUpdateStatusButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: () => _showStatusUpdateDialog(order),
+        icon: const Icon(Icons.update),
+        label: const Text('Update Order Status'),
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          elevation: 2,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(
+    String label,
+    String value, {
+    bool isTotal = false,
+    Color? valueColor,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+                fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+                color: valueColor ?? (isTotal ? Colors.black : Colors.black87),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Status update dialog
+  void _showStatusUpdateDialog(OrderModel order) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          title: const Text('Update Order Status'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Current Status: ${order.status.toString().split('.').last.toUpperCase()}',
+                style: TextStyle(color: Colors.grey[600], fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Select new status:',
+                style: TextStyle(fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 16),
+              ...OrderStatus.values.map(
+                (status) => _buildStatusOption(order, status),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Status option widget
+  Widget _buildStatusOption(OrderModel order, OrderStatus status) {
+    final isCurrentStatus = order.status == status;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: isCurrentStatus
+            ? Border.all(color: _getStatusColor(status), width: 2)
+            : null,
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        leading: Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: _getStatusColor(status),
+            shape: BoxShape.circle,
+          ),
+        ),
+        title: Text(
+          status.toString().split('.').last.toUpperCase(),
+          style: TextStyle(
+            fontWeight: isCurrentStatus ? FontWeight.bold : FontWeight.normal,
+            color: isCurrentStatus ? _getStatusColor(status) : null,
+          ),
+        ),
+        trailing: isCurrentStatus
+            ? Icon(Icons.check_circle, color: _getStatusColor(status))
+            : null,
+        onTap: isCurrentStatus ? null : () => _updateOrderStatus(order, status),
+        enabled: !isCurrentStatus,
+      ),
+    );
+  }
+
+  // Update order status method
+  Future<void> _updateOrderStatus(
+    OrderModel order,
+    OrderStatus newStatus,
+  ) async {
+    Navigator.of(context).pop(); // Close the dialog
+
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
+      // Update order status in your backend/database
+      await _updateOrderInDatabase(order.id, newStatus);
+
+      // Update local order object
+      // setState(() {
+      //   order.status = newStatus;
+      // });
+
+      // Close loading indicator
+      Navigator.of(context).pop();
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Order status updated to ${newStatus.toString().split('.').last.toUpperCase()}',
+          ),
+          backgroundColor: Colors.green,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      // Close loading indicator
+      Navigator.of(context).pop();
+
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to update order status: $e'),
+          backgroundColor: Colors.red,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  // Method to update order in database
+  Future<void> _updateOrderInDatabase(
+    String? orderId,
+    OrderStatus newStatus,
+  ) async {
+    if (orderId == null) {
+      throw Exception('Order ID is null');
+    }
+
+    // Implement your database update logic here
+    // Example for Firestore:
+    /*
+    await FirebaseFirestore.instance
+        .collection('orders')
+        .doc(orderId)
+        .update({'status': newStatus.toString().split('.').last});
+    */
+
+    // Example for API call:
+    /*
+    final response = await http.put(
+      Uri.parse('$baseUrl/orders/$orderId'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'status': newStatus.toString().split('.').last}),
+    );
+    
+    if (response.statusCode != 200) {
+      throw Exception('Failed to update order status');
+    }
+    */
+
+    // For demo purposes, just add a delay
+    await Future.delayed(const Duration(seconds: 1));
+  }
+
+  // Helper method to get status color
+  Color _getStatusColor(OrderStatus status) {
+    switch (status) {
+      case OrderStatus.PENDING:
+        return Colors.orange;
+      case OrderStatus.SHIPPED:
+        return Colors.blue;
+      case OrderStatus.DELIVERED:
+        return Colors.green;
+      case OrderStatus.CANCELLED:
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  // Helper method to format date
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
+  }
+}
+
+// Enum for order status (add this to your OrderModel file)

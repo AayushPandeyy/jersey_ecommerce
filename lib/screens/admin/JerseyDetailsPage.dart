@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:jersey_ecommerce/models/JerseyModel.dart';
+import 'package:jersey_ecommerce/service/FirestoreService.dart';
 
 class JerseyDetailsPage extends StatefulWidget {
   final JerseyModel jersey;
@@ -14,8 +16,6 @@ class _JerseyDetailsPageState extends State<JerseyDetailsPage> {
 
   bool isFavorite = false;
 
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -27,20 +27,78 @@ class _JerseyDetailsPageState extends State<JerseyDetailsPage> {
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        
+        actions: [
+          IconButton(onPressed: () {}, icon: Icon(Icons.edit)),
+          IconButton(
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    title: Text(
+                      'Delete the jersey',
+                      style: GoogleFonts.pixelifySans(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    content: Text(
+                      'Are you sure you want to delete "${widget.jersey.jerseyTitle}"?',
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () async {
+                          await FirestoreService().deleteJersey(
+                            widget.jersey.jerseyId,
+                          );
+                          Navigator.pop(context);
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                '${widget.jersey.jerseyTitle} deleted',
+                              ),
+                              backgroundColor: Colors.red,
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          );
+                        },
+                        child: const Text(
+                          'Delete',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+            icon: Icon(Icons.delete, color: Colors.red),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildImageSection(),
-            
+
             _buildProductDetails(),
-            
 
             _buildDescription(),
-
-            
           ],
         ),
       ),
@@ -68,7 +126,9 @@ class _JerseyDetailsPageState extends State<JerseyDetailsPage> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(16),
                     image: DecorationImage(
-                      image: NetworkImage(widget.jersey.jerseyImage[selectedImageIndex]),
+                      image: NetworkImage(
+                        widget.jersey.jerseyImage[selectedImageIndex],
+                      ),
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -76,7 +136,7 @@ class _JerseyDetailsPageState extends State<JerseyDetailsPage> {
               },
             ),
           ),
-          
+
           // Image Indicators
           Container(
             height: 60,
@@ -126,11 +186,9 @@ class _JerseyDetailsPageState extends State<JerseyDetailsPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Team and Brand
-         
-          
-          
+
           // Product Name
-           Text(
+          Text(
             widget.jersey.jerseyTitle,
             style: TextStyle(
               fontSize: 24,
@@ -138,13 +196,13 @@ class _JerseyDetailsPageState extends State<JerseyDetailsPage> {
               color: Colors.black87,
             ),
           ),
-          
+
           const SizedBox(height: 8),
-          
+
           // Price and Rating
           Row(
             children: [
-               Text(
+              Text(
                 '\$${widget.jersey.jerseyPrice}',
                 style: TextStyle(
                   fontSize: 28,
@@ -152,7 +210,7 @@ class _JerseyDetailsPageState extends State<JerseyDetailsPage> {
                   color: Colors.red,
                 ),
               ),
-              
+
               const Spacer(),
               Row(
                 children: [
@@ -168,29 +226,20 @@ class _JerseyDetailsPageState extends State<JerseyDetailsPage> {
                   const SizedBox(width: 4),
                   Text(
                     widget.jersey.rating.toString(),
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
                   ),
                 ],
               ),
             ],
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Quick Info
-          
         ],
       ),
     );
   }
-
-
-
-  
-
 
   Widget _buildDescription() {
     return Container(
@@ -202,10 +251,7 @@ class _JerseyDetailsPageState extends State<JerseyDetailsPage> {
         children: [
           const Text(
             'Description',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
           Text(
@@ -217,14 +263,8 @@ class _JerseyDetailsPageState extends State<JerseyDetailsPage> {
             ),
           ),
           const SizedBox(height: 16),
-         
         ],
       ),
     );
   }
-
-  
-  
-
- 
 }

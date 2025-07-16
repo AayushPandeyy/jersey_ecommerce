@@ -3,6 +3,7 @@ import 'package:jersey_ecommerce/models/OrderModel.dart';
 import 'package:jersey_ecommerce/models/JerseyModel.dart';
 import 'package:jersey_ecommerce/enum/OrderStatus.dart';
 import 'package:jersey_ecommerce/enum/PaymentMethod.dart';
+import 'package:jersey_ecommerce/screens/admin/AdminOrderDetailsPage.dart';
 import 'package:jersey_ecommerce/service/FirestoreService.dart';
 
 class ViewOrdersPage extends StatefulWidget {
@@ -17,7 +18,7 @@ class _ViewOrdersPageState extends State<ViewOrdersPage> {
   List<OrderModel> filteredOrders = [];
   bool isLoading = true;
   OrderStatus? selectedStatusFilter;
-  
+
   @override
   void initState() {
     super.initState();
@@ -32,10 +33,9 @@ class _ViewOrdersPageState extends State<ViewOrdersPage> {
     try {
       // TODO: Replace with actual API call
       await Future.delayed(const Duration(seconds: 1)); // Simulate API call
-      
+
       // Sample orders data - replace with actual data fetching
       filteredOrders = orders;
-      
     } catch (e) {
       _showErrorSnackBar('Error loading orders: $e');
     } finally {
@@ -45,15 +45,15 @@ class _ViewOrdersPageState extends State<ViewOrdersPage> {
     }
   }
 
-
-
   void _filterOrders(OrderStatus? status) {
     setState(() {
       selectedStatusFilter = status;
       if (status == null) {
         filteredOrders = orders;
       } else {
-        filteredOrders = orders.where((order) => order.status == status).toList();
+        filteredOrders = orders
+            .where((order) => order.status == status)
+            .toList();
       }
     });
   }
@@ -62,7 +62,7 @@ class _ViewOrdersPageState extends State<ViewOrdersPage> {
     switch (status) {
       case OrderStatus.PENDING:
         return Colors.orange;
-      
+
       case OrderStatus.SHIPPED:
         return Colors.green;
       case OrderStatus.DELIVERED:
@@ -76,7 +76,6 @@ class _ViewOrdersPageState extends State<ViewOrdersPage> {
 
   IconData _getPaymentIcon(PaymentMethod method) {
     switch (method) {
-
       case PaymentMethod.ONLINE_PAYMENT:
         return Icons.payment;
       case PaymentMethod.CASH_ON_DELIVERY:
@@ -88,110 +87,7 @@ class _ViewOrdersPageState extends State<ViewOrdersPage> {
 
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-      ),
-    );
-  }
-
-  void _showOrderDetails(OrderModel order) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => _buildOrderDetailsSheet(order),
-    );
-  }
-
-  Widget _buildOrderDetailsSheet(OrderModel order) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.8,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Column(
-        children: [
-          // Handle bar
-          Container(
-            margin: const EdgeInsets.only(top: 10),
-            width: 50,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          // Content
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Order Details',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: _getStatusColor(order.status).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          order.status.toString().split('.').last.toUpperCase(),
-                          style: TextStyle(
-                            color: _getStatusColor(order.status),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  
-                  // Jersey Info
-                  _buildDetailSection('Jersey Information', [
-                    _buildDetailRow('Name', order.jersey.jerseyTitle),
-                    _buildDetailRow('Price', '\$${order.jersey.jerseyPrice.toStringAsFixed(2)}'),
-                    _buildDetailRow('Quantity', '${order.quantity}'),
-                    _buildDetailRow('Size', order.selectedSize),
-                    _buildDetailRow('Total', '\$${order.totalAmount.toStringAsFixed(2)}'),
-                  ]),
-                  
-                  const SizedBox(height: 20),
-                  
-                  // Customer Info
-                  _buildDetailSection('Customer Information', [
-                    _buildDetailRow('Name', order.fullname),
-                    _buildDetailRow('Phone', order.phoneNUmber),
-                    _buildDetailRow('Address', order.address),
-                    _buildDetailRow('City', order.city),
-                    _buildDetailRow('Postal Code', order.postalCode),
-                  ]),
-                  
-                  const SizedBox(height: 20),
-                  
-                  // Payment Info
-                  _buildDetailSection('Payment Information', [
-                    _buildDetailRow('Method', order.paymentMethod.toString().split('.').last.toUpperCase()),
-                    _buildDetailRow('Amount', '\$${order.totalAmount.toStringAsFixed(2)}'),
-                  ]),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
   }
 
@@ -201,10 +97,7 @@ class _ViewOrdersPageState extends State<ViewOrdersPage> {
       children: [
         Text(
           title,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 10),
         Container(
@@ -254,19 +147,13 @@ class _ViewOrdersPageState extends State<ViewOrdersPage> {
       appBar: AppBar(
         title: const Text(
           'Orders',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         backgroundColor: Colors.blue[700],
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadOrders,
-          ),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadOrders),
         ],
       ),
       body: Column(
@@ -280,10 +167,7 @@ class _ViewOrdersPageState extends State<ViewOrdersPage> {
               children: [
                 const Text(
                   'Filter by Status',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 12),
                 SingleChildScrollView(
@@ -306,40 +190,44 @@ class _ViewOrdersPageState extends State<ViewOrdersPage> {
               ],
             ),
           ),
-          
+
           // Orders List
           Expanded(
-  child: StreamBuilder<List<OrderModel>>(
-    stream: FirestoreService().getOrdersStream(),
-    builder: (context, snapshot) {
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return const Center(child: CircularProgressIndicator());
-      }
+            child: StreamBuilder<List<OrderModel>>(
+              stream: FirestoreService().getOrdersStream(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-      if (!snapshot.hasData || snapshot.data!.isEmpty) {
-        return const Center(child: Text('No orders found'));
-      }
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Center(child: Text('No orders found'));
+                }
 
-      orders = snapshot.data!;
-      filteredOrders = selectedStatusFilter == null
-          ? orders
-          : orders.where((order) => order.status == selectedStatusFilter).toList();
+                orders = snapshot.data!;
+                filteredOrders = selectedStatusFilter == null
+                    ? orders
+                    : orders
+                          .where(
+                            (order) => order.status == selectedStatusFilter,
+                          )
+                          .toList();
 
-      return RefreshIndicator(
-        onRefresh: () async {}, // Firebase Stream auto-updates, so no need to reload
-        child: ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: filteredOrders.length,
-          itemBuilder: (context, index) {
-            final order = filteredOrders[index];
-            return _buildOrderCard(order);
-          },
-        ),
-      );
-    },
-  ),
-)
-
+                return RefreshIndicator(
+                  onRefresh:
+                      () async {}, // Firebase Stream auto-updates, so no need to reload
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: filteredOrders.length,
+                    itemBuilder: (context, index) {
+                      final order = filteredOrders[index];
+                      return _buildOrderCard(order);
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
         ],
       ),
     );
@@ -367,11 +255,16 @@ class _ViewOrdersPageState extends State<ViewOrdersPage> {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
-        onTap: () => _showOrderDetails(order),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AdminOrderDetailsPage(order: order),
+            ),
+          );
+        },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -390,7 +283,10 @@ class _ViewOrdersPageState extends State<ViewOrdersPage> {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: _getStatusColor(order.status).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
@@ -406,9 +302,9 @@ class _ViewOrdersPageState extends State<ViewOrdersPage> {
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 12),
-              
+
               // Jersey Info
               Row(
                 children: [
@@ -419,10 +315,7 @@ class _ViewOrdersPageState extends State<ViewOrdersPage> {
                       color: Colors.grey[200],
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(
-                      Icons.sports_soccer,
-                      color: Colors.grey,
-                    ),
+                    child: const Icon(Icons.sports_soccer, color: Colors.grey),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -451,9 +344,9 @@ class _ViewOrdersPageState extends State<ViewOrdersPage> {
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 12),
-              
+
               // Customer and Payment Info
               Row(
                 children: [
@@ -511,7 +404,11 @@ class _ViewOrdersPageState extends State<ViewOrdersPage> {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            order.paymentMethod.toString().split('.').last.toUpperCase(),
+                            order.paymentMethod
+                                .toString()
+                                .split('.')
+                                .last
+                                .toUpperCase(),
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.grey[600],

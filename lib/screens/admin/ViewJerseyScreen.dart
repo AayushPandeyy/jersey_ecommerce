@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:jersey_ecommerce/models/JerseyModel.dart';
+import 'package:jersey_ecommerce/screens/admin/AddJerseyScreen.dart';
 import 'package:jersey_ecommerce/screens/admin/JerseyDetailsPage.dart';
 
 class ViewJerseysPage extends StatefulWidget {
@@ -12,7 +13,7 @@ class ViewJerseysPage extends StatefulWidget {
 
 class _ViewJerseysPageState extends State<ViewJerseysPage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  
+
   List<JerseyModel> jerseys = [];
   List<JerseyModel> filteredJerseys = [];
   bool isLoading = true;
@@ -22,20 +23,19 @@ class _ViewJerseysPageState extends State<ViewJerseysPage> {
   double selectedMinPrice = 0;
   double selectedMaxPrice = 200;
   bool showFilters = false;
-  
+
   // Stream for jerseys
   Stream<List<JerseyModel>> getJerseysStream() {
     return FirebaseFirestore.instance
         .collection('Jersey')
         .snapshots()
         .map(
-          (snapshot) =>
-              snapshot.docs
-                  .map((doc) => JerseyModel.fromMap(doc.data()))
-                  .toList(),
+          (snapshot) => snapshot.docs
+              .map((doc) => JerseyModel.fromMap(doc.data()))
+              .toList(),
         );
   }
-  
+
   @override
   void initState() {
     super.initState();
@@ -45,18 +45,18 @@ class _ViewJerseysPageState extends State<ViewJerseysPage> {
   void _processJerseysData(List<JerseyModel> jerseysList) {
     try {
       jerseys = jerseysList;
-      
+
       // Update price range based on actual data
       if (jerseys.isNotEmpty) {
         final prices = jerseys.map((j) => j.jerseyPrice).toList();
         final newMinPrice = prices.reduce((a, b) => a < b ? a : b);
         final newMaxPrice = prices.reduce((a, b) => a > b ? a : b);
-        
+
         // Update price range if it has changed
         if (newMinPrice != minPrice || newMaxPrice != maxPrice) {
           minPrice = newMinPrice;
           maxPrice = newMaxPrice;
-          
+
           // Update selected range if it's the first time
           if (selectedMinPrice == 0 && selectedMaxPrice == 200) {
             selectedMinPrice = minPrice;
@@ -64,17 +64,23 @@ class _ViewJerseysPageState extends State<ViewJerseysPage> {
           }
         }
       }
-      
+
       // Filter jerseys without calling setState
       filteredJerseys = jerseys.where((jersey) {
-        final matchesSearch = jersey.jerseyTitle.toLowerCase().contains(searchQuery.toLowerCase()) ||
-                            jersey.jerseyDescription.toLowerCase().contains(searchQuery.toLowerCase());
-        final matchesPrice = jersey.jerseyPrice >= selectedMinPrice && jersey.jerseyPrice <= selectedMaxPrice;
+        final matchesSearch =
+            jersey.jerseyTitle.toLowerCase().contains(
+              searchQuery.toLowerCase(),
+            ) ||
+            jersey.jerseyDescription.toLowerCase().contains(
+              searchQuery.toLowerCase(),
+            );
+        final matchesPrice =
+            jersey.jerseyPrice >= selectedMinPrice &&
+            jersey.jerseyPrice <= selectedMaxPrice;
         return matchesSearch && matchesPrice;
       }).toList();
-      
+
       isLoading = false;
-      
     } catch (e) {
       // Don't show error during build, just log it
       print('Error processing jerseys data: $e');
@@ -85,9 +91,16 @@ class _ViewJerseysPageState extends State<ViewJerseysPage> {
   void _filterJerseys() {
     setState(() {
       filteredJerseys = jerseys.where((jersey) {
-        final matchesSearch = jersey.jerseyTitle.toLowerCase().contains(searchQuery.toLowerCase()) ||
-                            jersey.jerseyDescription.toLowerCase().contains(searchQuery.toLowerCase());
-        final matchesPrice = jersey.jerseyPrice >= selectedMinPrice && jersey.jerseyPrice <= selectedMaxPrice;
+        final matchesSearch =
+            jersey.jerseyTitle.toLowerCase().contains(
+              searchQuery.toLowerCase(),
+            ) ||
+            jersey.jerseyDescription.toLowerCase().contains(
+              searchQuery.toLowerCase(),
+            );
+        final matchesPrice =
+            jersey.jerseyPrice >= selectedMinPrice &&
+            jersey.jerseyPrice <= selectedMaxPrice;
         return matchesSearch && matchesPrice;
       }).toList();
     });
@@ -97,16 +110,22 @@ class _ViewJerseysPageState extends State<ViewJerseysPage> {
     setState(() {
       switch (sortBy) {
         case 'price_low':
-          filteredJerseys.sort((a, b) => a.jerseyPrice.compareTo(b.jerseyPrice));
+          filteredJerseys.sort(
+            (a, b) => a.jerseyPrice.compareTo(b.jerseyPrice),
+          );
           break;
         case 'price_high':
-          filteredJerseys.sort((a, b) => b.jerseyPrice.compareTo(a.jerseyPrice));
+          filteredJerseys.sort(
+            (a, b) => b.jerseyPrice.compareTo(a.jerseyPrice),
+          );
           break;
         case 'rating':
           filteredJerseys.sort((a, b) => b.rating.compareTo(a.rating));
           break;
         case 'name':
-          filteredJerseys.sort((a, b) => a.jerseyTitle.compareTo(b.jerseyTitle));
+          filteredJerseys.sort(
+            (a, b) => a.jerseyTitle.compareTo(b.jerseyTitle),
+          );
           break;
       }
     });
@@ -114,65 +133,13 @@ class _ViewJerseysPageState extends State<ViewJerseysPage> {
 
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
   }
 
   void _showSuccessSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green,
-      ),
-    );
-  }
-
-  void _showJerseyDetails(JerseyModel jersey) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => _buildJerseyDetailsSheet(jersey),
-    );
-  }
-
-  void _showSortOptions() {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Sort by',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 20),
-            _buildSortOption('Price: Low to High', 'price_low'),
-            _buildSortOption('Price: High to Low', 'price_high'),
-            _buildSortOption('Rating', 'rating'),
-            _buildSortOption('Name', 'name'),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSortOption(String title, String sortBy) {
-    return ListTile(
-      title: Text(title),
-      onTap: () {
-        Navigator.pop(context);
-        _sortJerseys(sortBy);
-      },
+      SnackBar(content: Text(message), backgroundColor: Colors.green),
     );
   }
 
@@ -210,7 +177,9 @@ class _ViewJerseysPageState extends State<ViewJerseysPage> {
                       color: Colors.grey[200],
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: jersey.jerseyImage != null && jersey.jerseyImage!.isNotEmpty
+                    child:
+                        jersey.jerseyImage != null &&
+                            jersey.jerseyImage!.isNotEmpty
                         ? ClipRRect(
                             borderRadius: BorderRadius.circular(12),
                             child: Image.network(
@@ -231,9 +200,9 @@ class _ViewJerseysPageState extends State<ViewJerseysPage> {
                             color: Colors.grey,
                           ),
                   ),
-                  
+
                   const SizedBox(height: 20),
-                  
+
                   // Jersey Title
                   Text(
                     jersey.jerseyTitle,
@@ -242,9 +211,9 @@ class _ViewJerseysPageState extends State<ViewJerseysPage> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  
+
                   const SizedBox(height: 10),
-                  
+
                   // Rating and Price Row
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -256,8 +225,8 @@ class _ViewJerseysPageState extends State<ViewJerseysPage> {
                               index < jersey.rating.floor()
                                   ? Icons.star
                                   : index < jersey.rating
-                                      ? Icons.star_half
-                                      : Icons.star_border,
+                                  ? Icons.star_half
+                                  : Icons.star_border,
                               color: Colors.amber,
                               size: 20,
                             );
@@ -282,16 +251,13 @@ class _ViewJerseysPageState extends State<ViewJerseysPage> {
                       ),
                     ],
                   ),
-                  
+
                   const SizedBox(height: 20),
-                  
+
                   // Description
                   const Text(
                     'Description',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 10),
                   Text(
@@ -302,9 +268,9 @@ class _ViewJerseysPageState extends State<ViewJerseysPage> {
                       height: 1.5,
                     ),
                   ),
-                  
+
                   const SizedBox(height: 30),
-                  
+
                   // Action Buttons
                   Row(
                     children: [
@@ -348,7 +314,9 @@ class _ViewJerseysPageState extends State<ViewJerseysPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Jersey'),
-        content: Text('Are you sure you want to delete "${jersey.jerseyTitle}"?'),
+        content: Text(
+          'Are you sure you want to delete "${jersey.jerseyTitle}"?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -382,19 +350,12 @@ class _ViewJerseysPageState extends State<ViewJerseysPage> {
       appBar: AppBar(
         title: const Text(
           'Jerseys',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         backgroundColor: Colors.blue[700],
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.sort),
-            onPressed: _showSortOptions,
-          ),
           IconButton(
             icon: Icon(showFilters ? Icons.filter_list : Icons.filter_list_off),
             onPressed: () {
@@ -430,7 +391,7 @@ class _ViewJerseysPageState extends State<ViewJerseysPage> {
               ),
             ),
           ),
-          
+
           // Filter Section
           if (showFilters)
             Container(
@@ -441,10 +402,7 @@ class _ViewJerseysPageState extends State<ViewJerseysPage> {
                 children: [
                   const Text(
                     'Price Range',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 10),
                   RangeSlider(
@@ -476,7 +434,7 @@ class _ViewJerseysPageState extends State<ViewJerseysPage> {
                 ],
               ),
             ),
-          
+
           // Results Count
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -486,12 +444,11 @@ class _ViewJerseysPageState extends State<ViewJerseysPage> {
               children: [
                 Text(
                   '${filteredJerseys.length} jerseys found',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey,
-                  ),
+                  style: const TextStyle(fontSize: 14, color: Colors.grey),
                 ),
-                if (searchQuery.isNotEmpty || selectedMinPrice != minPrice || selectedMaxPrice != maxPrice)
+                if (searchQuery.isNotEmpty ||
+                    selectedMinPrice != minPrice ||
+                    selectedMaxPrice != maxPrice)
                   TextButton(
                     onPressed: () {
                       setState(() {
@@ -506,7 +463,7 @@ class _ViewJerseysPageState extends State<ViewJerseysPage> {
               ],
             ),
           ),
-          
+
           // Jerseys Grid with StreamBuilder
           Expanded(
             child: StreamBuilder<List<JerseyModel>>(
@@ -545,9 +502,7 @@ class _ViewJerseysPageState extends State<ViewJerseysPage> {
                 }
 
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
+                  return const Center(child: CircularProgressIndicator());
                 }
 
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
@@ -599,12 +554,13 @@ class _ViewJerseysPageState extends State<ViewJerseysPage> {
                       )
                     : GridView.builder(
                         padding: const EdgeInsets.all(16),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          childAspectRatio: 0.6,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                        ),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              childAspectRatio: 0.6,
+                              crossAxisSpacing: 16,
+                              mainAxisSpacing: 16,
+                            ),
                         itemCount: filteredJerseys.length,
                         itemBuilder: (context, index) {
                           final jersey = filteredJerseys[index];
@@ -619,7 +575,10 @@ class _ViewJerseysPageState extends State<ViewJerseysPage> {
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           // TODO: Navigate to add jersey page
-          _showSuccessSnackBar('Add new jersey functionality');
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AddJerseyPage()),
+          );
         },
         backgroundColor: Colors.blue[700],
         child: const Icon(Icons.add, color: Colors.white),
@@ -630,12 +589,15 @@ class _ViewJerseysPageState extends State<ViewJerseysPage> {
   Widget _buildJerseyCard(JerseyModel jersey) {
     return Card(
       elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
-        onTap: (){
-          Navigator.push(context, MaterialPageRoute(builder: (context)=>  JerseyDetailsPage(jersey: jersey,)));
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => JerseyDetailsPage(jersey: jersey),
+            ),
+          );
         },
         borderRadius: BorderRadius.circular(12),
         child: Column(
@@ -648,11 +610,16 @@ class _ViewJerseysPageState extends State<ViewJerseysPage> {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: Colors.grey[200],
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(12),
+                  ),
                 ),
-                child: jersey.jerseyImage != null && jersey.jerseyImage!.isNotEmpty
+                child:
+                    jersey.jerseyImage != null && jersey.jerseyImage!.isNotEmpty
                     ? ClipRRect(
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(12),
+                        ),
                         child: Image.network(
                           jersey.jerseyImage[0]!,
                           fit: BoxFit.cover,
@@ -672,7 +639,7 @@ class _ViewJerseysPageState extends State<ViewJerseysPage> {
                       ),
               ),
             ),
-            
+
             // Jersey Details
             Expanded(
               flex: 2,
@@ -691,9 +658,9 @@ class _ViewJerseysPageState extends State<ViewJerseysPage> {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    
+
                     const SizedBox(height: 8),
-                    
+
                     // Rating
                     Row(
                       children: [
@@ -702,8 +669,8 @@ class _ViewJerseysPageState extends State<ViewJerseysPage> {
                             index < jersey.rating.floor()
                                 ? Icons.star
                                 : index < jersey.rating
-                                    ? Icons.star_half
-                                    : Icons.star_border,
+                                ? Icons.star_half
+                                : Icons.star_border,
                             color: Colors.amber,
                             size: 16,
                           );
@@ -718,9 +685,9 @@ class _ViewJerseysPageState extends State<ViewJerseysPage> {
                         ),
                       ],
                     ),
-                    
+
                     const Spacer(),
-                    
+
                     // Price
                     Text(
                       '\$${jersey.jerseyPrice.toStringAsFixed(2)}',

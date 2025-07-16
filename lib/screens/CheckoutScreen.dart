@@ -27,14 +27,14 @@ class CheckoutPage extends StatefulWidget {
 class _CheckoutPageState extends State<CheckoutPage> {
   final FirestoreService firestoreService = FirestoreService();
   final _formKey = GlobalKey<FormState>();
-  
+
   // Form controllers
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _cityController = TextEditingController();
   final TextEditingController _postalCodeController = TextEditingController();
-  
+
   String selectedPaymentMethod = 'Cash on Delivery';
   bool isLoading = false;
 
@@ -52,17 +52,16 @@ class _CheckoutPageState extends State<CheckoutPage> {
     try {
       await firestoreService.addOrder(
         FirebaseAuth.instance.currentUser!.uid,
-        model
-        
+        model,
       );
-      
+
       Navigator.pop(context);
       Navigator.pop(context);
       Loaders().showOrderPlacedPopup(context);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error placing order: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error placing order: $e')));
     } finally {
       setState(() {
         isLoading = false;
@@ -74,7 +73,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: StreamBuilder(
-        stream: FirestoreService().getUserDataByEmail(FirebaseAuth.instance.currentUser!.email!),
+        stream: FirestoreService().getUserDataByEmail(
+          FirebaseAuth.instance.currentUser!.email!,
+        ),
         builder: (context, asyncSnapshot) {
           return Scaffold(
             appBar: AppBar(
@@ -167,9 +168,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
                             ],
                           ),
                         ),
-                        
+
                         const SizedBox(height: 24),
-                        
+
                         // Shipping Information
                         Text(
                           'Shipping Information',
@@ -179,7 +180,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        
+
                         TextFormField(
                           controller: _nameController,
                           decoration: InputDecoration(
@@ -197,7 +198,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                           },
                         ),
                         const SizedBox(height: 16),
-                        
+
                         TextFormField(
                           controller: _phoneController,
                           decoration: InputDecoration(
@@ -216,7 +217,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                           },
                         ),
                         const SizedBox(height: 16),
-                        
+
                         TextFormField(
                           controller: _addressController,
                           decoration: InputDecoration(
@@ -235,7 +236,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                           },
                         ),
                         const SizedBox(height: 16),
-                        
+
                         Row(
                           children: [
                             Expanded(
@@ -278,9 +279,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
                             ),
                           ],
                         ),
-                        
+
                         const SizedBox(height: 24),
-                        
+
                         // Payment Method
                         Text(
                           'Payment Method',
@@ -290,7 +291,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        
+
                         Container(
                           decoration: BoxDecoration(
                             border: Border.all(color: Colors.grey.shade300),
@@ -311,10 +312,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                   });
                                 },
                               ),
-                              Divider(
-                                height: 1,
-                                color: Colors.grey.shade300,
-                              ),
+                              Divider(height: 1, color: Colors.grey.shade300),
                               RadioListTile<String>(
                                 title: Text(
                                   'Online Payment',
@@ -331,9 +329,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
                             ],
                           ),
                         ),
-                        
+
                         const SizedBox(height: 24),
-                        
+
                         // Order Total
                         Container(
                           padding: const EdgeInsets.all(16),
@@ -344,7 +342,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
                           child: Column(
                             children: [
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
                                     'Subtotal',
@@ -358,7 +357,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
                               ),
                               const SizedBox(height: 8),
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
                                     'Delivery Fee',
@@ -376,7 +376,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                 height: 24,
                               ),
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
                                     'Total',
@@ -399,18 +400,23 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                 thickness: 1,
                                 height: 24,
                               ),
-                              Text("!!! Order Once Placed Cannot Be Changed !!!",textAlign: TextAlign.center,style: GoogleFonts.allerta(
-                                fontSize: 18,color: Colors.red
-                              ),)
+                              Text(
+                                "!!! Order Once Placed Cannot Be Changed !!!",
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.allerta(
+                                  fontSize: 18,
+                                  color: Colors.red,
+                                ),
+                              ),
                             ],
                           ),
                         ),
-                        
+
                         const SizedBox(height: 70),
                       ],
                     ),
                   ),
-                  
+
                   // Place Order Button
                   Positioned(
                     bottom: 0,
@@ -420,8 +426,29 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       padding: const EdgeInsets.all(16),
                       color: Colors.white,
                       child: ElevatedButton(
-                        onPressed: (){
-                          isLoading ? null : placeOrder(OrderModel(status:OrderStatus.PENDING,jersey: widget.model, quantity: widget.quantity, selectedSize: widget.selectedSize, fullname: _nameController.text, phoneNUmber: _phoneController.text, address: _addressController.text, city: _cityController.text, postalCode: _postalCodeController.text, totalAmount: total,paymentMethod: selectedPaymentMethod == "Cash on Delivery" ? PaymentMethod.CASH_ON_DELIVERY : PaymentMethod.ONLINE_PAYMENT ));
+                        onPressed: () {
+                          isLoading
+                              ? null
+                              : placeOrder(
+                                  OrderModel(
+                                    status: OrderStatus.PENDING,
+                                    jersey: widget.model,
+                                    quantity: widget.quantity,
+                                    selectedSize: widget.selectedSize,
+                                    fullname: _nameController.text,
+                                    phoneNUmber: _phoneController.text,
+                                    address: _addressController.text,
+                                    city: _cityController.text,
+                                    postalCode: _postalCodeController.text,
+                                    totalAmount: total,
+                                    paymentMethod:
+                                        selectedPaymentMethod ==
+                                            "Cash on Delivery"
+                                        ? PaymentMethod.CASH_ON_DELIVERY
+                                        : PaymentMethod.ONLINE_PAYMENT,
+                                    orderDate: DateTime.now(),
+                                  ),
+                                );
                         },
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
@@ -432,7 +459,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
                         ),
                         child: isLoading
                             ? const CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
                               )
                             : Text(
                                 'Place Order - Rs. ${total.toStringAsFixed(0)}',
@@ -448,7 +477,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
               ),
             ),
           );
-        }
+        },
       ),
     );
   }

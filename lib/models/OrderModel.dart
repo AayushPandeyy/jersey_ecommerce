@@ -15,9 +15,11 @@ class OrderModel {
   final double totalAmount;
   final OrderStatus status;
   final PaymentMethod paymentMethod;
+  final DateTime orderDate;
 
   OrderModel({
     this.id, // <-- new field
+    required this.orderDate,
     required this.jersey,
     required this.quantity,
     required this.selectedSize,

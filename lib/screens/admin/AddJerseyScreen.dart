@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
 import 'package:jersey_ecommerce/models/JerseyModel.dart';
+import 'package:jersey_ecommerce/service/FirestoreService.dart';
 
 class AddJerseyPage extends StatefulWidget {
   const AddJerseyPage({Key? key}) : super(key: key);
@@ -17,7 +18,7 @@ class _AddJerseyPageState extends State<AddJerseyPage> {
   final _descriptionController = TextEditingController();
   final _priceController = TextEditingController();
   final _ratingController = TextEditingController();
-  
+
   List<File?> _selectedImages = [null, null, null, null];
   final ImagePicker _picker = ImagePicker();
   bool _isLoading = false;
@@ -37,7 +38,7 @@ class _AddJerseyPageState extends State<AddJerseyPage> {
         source: ImageSource.gallery,
         imageQuality: 80,
       );
-      
+
       if (image != null) {
         setState(() {
           _selectedImages[index] = File(image.path);
@@ -56,73 +57,54 @@ class _AddJerseyPageState extends State<AddJerseyPage> {
 
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
   }
 
   void _showSuccessSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green,
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.green),
     );
   }
 
   Future<void> _saveJersey() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
-    // Check if at least one image is selected
     if (_selectedImages.every((image) => image == null)) {
       _showErrorSnackBar('Please select at least one image');
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     try {
-      // Convert images to strings (paths) for the model
-      List<String> imagePaths = _selectedImages
-          .where((image) => image != null)
-          .map((image) => image!.path)
-          .toList();
-
-      // Create JerseyModel instance
+      // Create JerseyModel without image URLs and ID for now
       final jersey = JerseyModel(
-        jerseyId: DateTime.now().millisecondsSinceEpoch.toString(),
+        jerseyId: '', // Will be set by Firestore doc ID
         jerseyTitle: _titleController.text.trim(),
         jerseyDescription: _descriptionController.text.trim(),
-        jerseyImage: imagePaths,
+        jerseyImage: [], // Will be set after image upload
         jerseyPrice: double.parse(_priceController.text.trim()),
-        rating: double.parse(_ratingController.text.trim()),
+        rating: 4.5,
       );
 
-      // TODO: Save to database/API
-      print('Jersey saved: ${jersey.toJson()}');
-      
+      // Use service to handle upload + Firestore
+      await FirestoreService().addJersey(jersey, _selectedImages);
+
       _showSuccessSnackBar('Jersey added successfully!');
-      
-      // Clear form
+
+      // Clear form and reset images
       _titleController.clear();
       _descriptionController.clear();
       _priceController.clear();
+      _ratingController.clear();
       setState(() {
         _selectedImages = [null, null, null, null];
       });
-      
     } catch (e) {
       _showErrorSnackBar('Error saving jersey: $e');
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
     }
   }
 
@@ -133,10 +115,7 @@ class _AddJerseyPageState extends State<AddJerseyPage> {
       appBar: AppBar(
         title: const Text(
           'Add New Jersey',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         backgroundColor: Colors.blue[700],
         elevation: 0,
@@ -183,21 +162,19 @@ class _AddJerseyPageState extends State<AddJerseyPage> {
                     const SizedBox(height: 8),
                     const Text(
                       'Add up to 4 images of the jersey',
-                      style: TextStyle(
-                        color: Colors.grey,
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: Colors.grey, fontSize: 14),
                     ),
                     const SizedBox(height: 20),
                     GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                        childAspectRatio: 1,
-                      ),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 10,
+                            mainAxisSpacing: 10,
+                            childAspectRatio: 1,
+                          ),
                       itemCount: 4,
                       itemBuilder: (context, index) {
                         return GestureDetector(
@@ -292,7 +269,11 @@ class _AddJerseyPageState extends State<AddJerseyPage> {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.sports_soccer, color: Colors.blue[700], size: 24),
+                        Icon(
+                          Icons.sports_soccer,
+                          color: Colors.blue[700],
+                          size: 24,
+                        ),
                         const SizedBox(width: 8),
                         const Text(
                           'Jersey Details',
@@ -398,7 +379,9 @@ class _AddJerseyPageState extends State<AddJerseyPage> {
                           height: 20,
                           width: 20,
                           child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
                             strokeWidth: 2,
                           ),
                         )
@@ -411,7 +394,7 @@ class _AddJerseyPageState extends State<AddJerseyPage> {
                         ),
                 ),
               ),
-              SizedBox(height: 20,)
+              SizedBox(height: 20),
             ],
           ),
         ),
