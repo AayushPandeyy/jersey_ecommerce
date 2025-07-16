@@ -33,7 +33,7 @@ class JerseyModel {
       'jerseyDescription': jerseyDescription,
       'jerseyImage': jerseyImage,
       'jerseyPrice': jerseyPrice,
-      'rating': rating, 
+      'rating': rating,
     };
   }
 
@@ -58,5 +58,25 @@ class JerseyModel {
       'jerseyPrice': jerseyPrice,
       'rating': rating,
     };
+  }
+}
+
+extension JerseyCopy on JerseyModel {
+  JerseyModel copyWith({
+    String? jerseyId,
+    String? jerseyTitle,
+    String? jerseyDescription,
+    List<String>? jerseyImage,
+    double? jerseyPrice,
+    double? rating,
+  }) {
+    return JerseyModel(
+      jerseyId: jerseyId ?? this.jerseyId,
+      jerseyTitle: jerseyTitle ?? this.jerseyTitle,
+      jerseyDescription: jerseyDescription ?? this.jerseyDescription,
+      jerseyImage: jerseyImage ?? this.jerseyImage,
+      jerseyPrice: jerseyPrice ?? this.jerseyPrice,
+      rating: rating ?? this.rating,
+    );
   }
 }

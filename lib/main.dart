@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:jersey_ecommerce/firebase_options.dart';
 import 'package:jersey_ecommerce/screens/NavigationScreen.dart';
 import 'package:jersey_ecommerce/screens/auth/AuthPage.dart';
@@ -20,7 +21,9 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
+        textTheme: GoogleFonts.marcellusTextTheme(),
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        
       ),
       home: LoginChecker(),
       debugShowCheckedModeBanner: false,

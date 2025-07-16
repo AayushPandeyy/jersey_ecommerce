@@ -1,11 +1,10 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:jersey_ecommerce/models/JerseyModel.dart';
-import 'package:jersey_ecommerce/models/Jerseys.dart';
-import 'package:jersey_ecommerce/screens/EditShippingAddressPage.dart';
+import 'package:jersey_ecommerce/screens/EditShippingAdressPage.dart';
 import 'package:jersey_ecommerce/screens/ProductPage.dart';
 import 'package:jersey_ecommerce/service/FirestoreService.dart';
-import 'package:jersey_ecommerce/utlitlies/GPSUsage.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -66,7 +65,7 @@ class _HomePageState extends State<HomePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 20),
-                  Center(child: _locationBar(context,"Gongabu Near Angle W0rld Montessori, Kathmandu")),
+                  Center(child: _locationBar(context)),
                   const SizedBox(height: 20),
                   _newArrivalCard(context),
 
@@ -109,88 +108,93 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-Widget _locationBar(BuildContext context,String location) {
-  return Container(
-    width: MediaQuery.sizeOf(context).width * 0.9,
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.grey.withOpacity(0.1),
-          spreadRadius: 0,
-          blurRadius: 10,
-          offset: const Offset(0, 2),
-        ),
-      ],
-    ),
-    child: Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: const Color(0xff015888).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            Icons.location_on,
-            color: const Color(0xff015888),
-            size: 20,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Send to',
-                style: GoogleFonts.marcellus(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 2),
-               Text(
-                location,
-                style: GoogleFonts.marcellus(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-            ],
-          ),
-        ),
-        GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => EditShippingAddressPage(),
-              ),
-            );
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
-              color: const Color(0xff015888),
-              borderRadius: BorderRadius.circular(12),
+Widget _locationBar(BuildContext context) {
+  return StreamBuilder(
+    stream: FirestoreService().getUserDataByEmail(FirebaseAuth.instance.currentUser!.email!),
+    builder: (context, asyncSnapshot) {
+      if(asyncSnapshot.connectionState == ConnectionState.waiting){
+        return Center(child: CircularProgressIndicator(),);
+      }
+            final userData = asyncSnapshot.data!.first;
+      final address = userData['address'] ?? 'No address set';
+      return Container(
+        width: MediaQuery.sizeOf(context).width * 0.9,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 0,
+              blurRadius: 10,
+              offset: const Offset(0, 2),
             ),
-            child:  Text(
-              'Change',
-              style: GoogleFonts.marcellus(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xff015888).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.location_on,
+                color: const Color(0xff015888),
+                size: 20,
               ),
             ),
-          ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Send to',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                   Text(
+                    address,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            GestureDetector(
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context)=>const EditShippingAddressPage()));
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xff015888),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text(
+                  'Change',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
-      ],
-    ),
+      );
+    }
   );
 }
 
