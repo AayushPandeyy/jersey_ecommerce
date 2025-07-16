@@ -6,6 +6,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:jersey_ecommerce/enum/OrderStatus.dart';
 import 'package:jersey_ecommerce/enum/PaymentMethod.dart';
 import 'package:jersey_ecommerce/enum/PaymentStatus.dart';
+import 'package:jersey_ecommerce/models/CartModel.dart';
 import 'package:jersey_ecommerce/models/OrderModel.dart';
 import '../models/JerseyModel.dart';
 
@@ -137,6 +138,8 @@ class FirestoreService {
       'paymentMethod': order.paymentMethod.name,
       'totalAmount': order.totalAmount,
       'timestamp': FieldValue.serverTimestamp(),
+      'orderDate': order.orderDate.toIso8601String(),
+      'paymentStatus': order.paymentStatus.name,
     });
   }
 
@@ -405,4 +408,32 @@ class FirestoreService {
           .toList();
     });
   }
+
+  Future<void> addToCart(String userId, CartItemModel cartItem) async {
+  final cartRef = FirebaseFirestore.instance
+      .collection('users')
+      .doc(userId)
+      .collection('cart');
+
+  // Check if the item already exists (same jerseyId + size)
+  final existing = await cartRef
+      .where('jerseyId', isEqualTo: cartItem.jerseyId)
+      .where('selectedSize', isEqualTo: cartItem.selectedSize)
+      .get();
+
+  if (existing.docs.isNotEmpty) {
+    // Update quantity if already in cart
+    final docId = existing.docs.first.id;
+    final currentQty = existing.docs.first['quantity'] as int;
+
+    await cartRef.doc(docId).update({
+      'quantity': currentQty + cartItem.quantity,
+    });
+  } else {
+    // Add new item
+    final newDoc = cartRef.doc();
+    await newDoc.set(cartItem.copyWith(id: newDoc.id).toMap());
+  }
+}
+
 }
