@@ -409,11 +409,24 @@ class FirestoreService {
     });
   }
 
+  Stream<List<CartItemModel>> getCartItems(String userId) {
+    return FirebaseFirestore.instance
+        .collection('Cart')
+        .doc(userId)
+        .collection('CartItems')
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs.map((doc) {
+            return CartItemModel.fromMap(doc.data());
+          }).toList();
+        });
+  }
+
   Future<void> addToCart(String userId, CartItemModel cartItem) async {
   final cartRef = FirebaseFirestore.instance
-      .collection('users')
+      .collection('Cart')
       .doc(userId)
-      .collection('cart');
+      .collection('CartItems');
 
   // Check if the item already exists (same jerseyId + size)
   final existing = await cartRef
@@ -435,5 +448,30 @@ class FirestoreService {
     await newDoc.set(cartItem.copyWith(id: newDoc.id).toMap());
   }
 }
+
+  Future<void> deleteFromCart(String itemId,String userId) async {
+    
+    await FirebaseFirestore.instance
+        .collection('Cart')
+        .doc(userId)
+        .collection('CartItems')
+        .doc(itemId)
+        .delete();
+  }
+    Future<void> clearCart(String userId) async {
+
+    
+    final batch = FirebaseFirestore.instance.batch();
+    final cartRef = FirebaseFirestore.instance
+        .collection('Carts')
+        .doc(userId)
+        .collection('CartItems');
+    
+    final snapshot = await cartRef.get();
+    for (var doc in snapshot.docs) {
+      batch.delete(doc.reference);
+    }
+    await batch.commit();
+  }
 
 }

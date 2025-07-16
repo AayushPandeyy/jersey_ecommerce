@@ -1,3 +1,5 @@
+
+
 class CartItemModel {
   final String id;
   final String jerseyId;
@@ -6,7 +8,7 @@ class CartItemModel {
   final double jerseyPrice;
   final int quantity;
   final String selectedSize;
-
+  
   CartItemModel({
     required this.id,
     required this.jerseyId,
@@ -16,7 +18,7 @@ class CartItemModel {
     required this.quantity,
     required this.selectedSize,
   });
-
+  
   Map<String, dynamic> toMap() => {
         'id': id,
         'jerseyId': jerseyId,
@@ -26,17 +28,17 @@ class CartItemModel {
         'quantity': quantity,
         'selectedSize': selectedSize,
       };
-
+      
   factory CartItemModel.fromMap(Map<String, dynamic> map) => CartItemModel(
         id: map['id'],
         jerseyId: map['jerseyId'],
         jerseyTitle: map['jerseyTitle'],
         jerseyImage: map['jerseyImage'],
-        jerseyPrice: map['jerseyPrice'],
+        jerseyPrice: map['jerseyPrice'].toDouble(),
         quantity: map['quantity'],
         selectedSize: map['selectedSize'],
       );
-
+  
   CartItemModel copyWith({
     String? id,
     String? jerseyId,

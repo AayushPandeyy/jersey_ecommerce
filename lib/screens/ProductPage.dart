@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:jersey_ecommerce/models/CartModel.dart';
 import 'package:jersey_ecommerce/models/JerseyModel.dart';
 import 'package:jersey_ecommerce/screens/CheckoutScreen.dart';
 import 'package:jersey_ecommerce/service/FirestoreService.dart';
@@ -53,6 +54,40 @@ class _ProductPageState extends State<ProductPage> {
     print("Error checking favorite status: $e");
   }
 }
+
+Future<void> addToCartHandler() async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('You must be logged in to add items to cart')),
+    );
+    return;
+  }
+
+  try {
+    final cartItem = CartItemModel(
+      id: '', 
+      jerseyId: widget.model.jerseyId,
+      jerseyTitle: widget.model.jerseyTitle,
+      jerseyImage: widget.model.jerseyImage[0], 
+      jerseyPrice: widget.model.jerseyPrice,
+      selectedSize: selectedSize!,
+      quantity: quantity,
+    );
+
+    await firestoreService.addToCart(user.uid, cartItem);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Added to cart')),
+    );
+  } catch (e) {
+    print('Error adding to cart: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Failed to add to cart')),
+    );
+  }
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -252,35 +287,36 @@ class _ProductPageState extends State<ProductPage> {
                   children: [
                     // Add to Cart Button
                     Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          if (selectedSize == null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Please select a size'),
-                              ),
-                            );
-                          } else {
-                            // TODO: Add to Hive cart box
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          backgroundColor: const Color(0xff3282B8),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: Text(
-                          "Add to Cart\nRs. ${widget.model.jerseyPrice * quantity}",
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.marcellus(
-                            fontSize: 16,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
+  child: ElevatedButton(
+    onPressed: () {
+      if (selectedSize == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please select a size'),
+          ),
+        );
+      } else {
+        addToCartHandler();
+      }
+    },
+    style: ElevatedButton.styleFrom(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      backgroundColor: const Color(0xff3282B8),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+      ),
+    ),
+    child: Text(
+      "Add to Cart\nRs. ${widget.model.jerseyPrice * quantity}",
+      textAlign: TextAlign.center,
+      style: GoogleFonts.marcellus(
+        fontSize: 16,
+        color: Colors.white,
+      ),
+    ),
+  ),
+),
+
                     const SizedBox(width: 12),
                     // Buy Now Button
                     Expanded(
