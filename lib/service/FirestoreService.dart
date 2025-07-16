@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:jersey_ecommerce/enum/OrderStatus.dart';
 import 'package:jersey_ecommerce/enum/PaymentMethod.dart';
+import 'package:jersey_ecommerce/enum/PaymentStatus.dart';
 import 'package:jersey_ecommerce/models/OrderModel.dart';
 import '../models/JerseyModel.dart';
 
@@ -175,6 +176,13 @@ class FirestoreService {
               orElse: () => PaymentMethod.CASH_ON_DELIVERY,
             );
 
+            final paymentStatus = PaymentStatus.values.firstWhere(
+              (e) =>
+                  e.name.toLowerCase() ==
+                  (data['paymentStatus'] ?? '').toLowerCase(),
+              orElse: () => PaymentStatus.PENDING,
+            );
+
             return OrderModel(
               id: doc.id,
               jersey: jerseyModel,
@@ -189,6 +197,7 @@ class FirestoreService {
               status: status,
               paymentMethod: paymentMethod,
               orderDate: DateTime.parse(data['orderDate']),
+              paymentStatus: paymentStatus
             );
           }).toList();
         });
@@ -229,6 +238,13 @@ class FirestoreService {
               orElse: () => PaymentMethod.CASH_ON_DELIVERY,
             );
 
+            final paymentStatus = PaymentStatus.values.firstWhere(
+              (e) =>
+                  e.name.toLowerCase() ==
+                  (data['paymentStatus'] ?? '').toLowerCase(),
+              orElse: () => PaymentStatus.PENDING,
+            );
+
             return OrderModel(
               id: doc.id,
               jersey: jerseyModel,
@@ -243,6 +259,7 @@ class FirestoreService {
               status: status,
               paymentMethod: paymentMethod,
               orderDate: DateTime.parse(data['orderDate']),
+              paymentStatus: paymentStatus,
             );
           }).toList();
         });
@@ -257,6 +274,17 @@ class FirestoreService {
       throw Exception('Failed to update order status: $e');
     }
   }
+
+  Future<void> updateOrderPaymentStatus(String orderId, PaymentStatus newStatus) async {
+    try {
+      await FirebaseFirestore.instance.collection('Orders').doc(orderId).update(
+        {'paymentStatus': newStatus.name},
+      );
+    } catch (e) {
+      throw Exception('Failed to update order payment status: $e');
+    }
+  }
+
 
   Future<void> addJerseyToFavorites(
     String jerseyId,

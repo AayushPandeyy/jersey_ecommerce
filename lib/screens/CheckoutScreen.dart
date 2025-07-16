@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:jersey_ecommerce/enum/OrderStatus.dart';
 import 'package:jersey_ecommerce/enum/PaymentMethod.dart';
+import 'package:jersey_ecommerce/enum/PaymentStatus.dart';
 import 'package:jersey_ecommerce/models/JerseyModel.dart';
 import 'package:jersey_ecommerce/models/OrderModel.dart';
 import 'package:jersey_ecommerce/service/FirestoreService.dart';
@@ -447,6 +448,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                         ? PaymentMethod.CASH_ON_DELIVERY
                                         : PaymentMethod.ONLINE_PAYMENT,
                                     orderDate: DateTime.now(),
+                                    paymentStatus: PaymentStatus.PENDING
                                   ),
                                 );
                         },

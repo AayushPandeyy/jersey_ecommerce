@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:jersey_ecommerce/enum/OrderStatus.dart';
+import 'package:jersey_ecommerce/enum/PaymentStatus.dart';
 import 'package:jersey_ecommerce/models/OrderModel.dart';
 
 class AdminOrderDetailsPage extends StatefulWidget {
@@ -14,11 +16,105 @@ class AdminOrderDetailsPage extends StatefulWidget {
 
 class _AdminOrderDetailsPageState extends State<AdminOrderDetailsPage> {
   late OrderModel order;
+  bool _isUpdating = false;
 
   @override
   void initState() {
     super.initState();
     order = widget.order;
+  }
+
+  // Firestore functions
+  Future<void> updateOrderStatus(String orderId, OrderStatus newStatus) async {
+    try {
+      await FirebaseFirestore.instance.collection('Orders').doc(orderId).update(
+        {'status': newStatus.name},
+      );
+    } catch (e) {
+      throw Exception('Failed to update order status: $e');
+    }
+  }
+
+  Future<void> updateOrderPaymentStatus(String orderId, PaymentStatus newStatus) async {
+    try {
+      await FirebaseFirestore.instance.collection('Orders').doc(orderId).update(
+        {'paymentStatus': newStatus.name},
+      );
+    } catch (e) {
+      throw Exception('Failed to update order payment status: $e');
+    }
+  }
+
+  // Method to update order status
+  Future<void> _updateOrderStatus(OrderStatus newStatus) async {
+    setState(() {
+      _isUpdating = true;
+    });
+
+    try {
+      await updateOrderStatus(order.id!, newStatus);
+      setState(() {
+        order = order.copyWith(status: newStatus);
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Order status updated to ${newStatus.name}'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update order status: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      setState(() {
+        _isUpdating = false;
+      });
+    }
+  }
+
+  // Method to update payment status
+  Future<void> _updatePaymentStatus(PaymentStatus newStatus) async {
+    setState(() {
+      _isUpdating = true;
+    });
+
+    try {
+      await updateOrderPaymentStatus(order.id!, newStatus);
+      setState(() {
+        order = order.copyWith(paymentStatus: newStatus);
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Payment status updated to ${newStatus.name}'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update payment status: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      setState(() {
+        _isUpdating = false;
+      });
+    }
   }
 
   @override
@@ -32,8 +128,14 @@ class _AdminOrderDetailsPageState extends State<AdminOrderDetailsPage> {
         elevation: 0,
         actions: [
           IconButton(
-            onPressed: () => _showStatusUpdateDialog(order),
-            icon: const Icon(Icons.edit),
+            onPressed: _isUpdating ? null : () => _showStatusUpdateDialog(order),
+            icon: _isUpdating 
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.edit),
             tooltip: 'Update Status',
           ),
         ],
@@ -58,9 +160,6 @@ class _AdminOrderDetailsPageState extends State<AdminOrderDetailsPage> {
             // Payment Information Card
             _buildPaymentInfoCard(),
             const SizedBox(height: 24),
-
-            // Update Status Button
-            _buildUpdateStatusButton(),
           ],
         ),
       ),
@@ -84,7 +183,7 @@ class _AdminOrderDetailsPageState extends State<AdminOrderDetailsPage> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 GestureDetector(
-                  onTap: () => _showStatusUpdateDialog(order),
+                  onTap: _isUpdating ? null : () => _showStatusUpdateDialog(order),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16,
@@ -215,9 +314,59 @@ class _AdminOrderDetailsPageState extends State<AdminOrderDetailsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Payment Information',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Payment Information',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                GestureDetector(
+                  onTap: _isUpdating ? null : () => _showPaymentStatusUpdateDialog(order),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: (order.paymentStatus.name == "PAID" ? Colors.green : Colors.red).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: (order.paymentStatus.name == "PAID" ? Colors.green : Colors.red).withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: order.paymentStatus.name == "PAID" ? Colors.green : Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          order.paymentStatus.name,
+                          style: TextStyle(
+                            color: order.paymentStatus.name == "PAID" ? Colors.green : Colors.red,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 10,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.edit,
+                          size: 12,
+                          color: order.paymentStatus.name == "PAID" ? Colors.green : Colors.red,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
             _buildDetailRow(
@@ -228,30 +377,14 @@ class _AdminOrderDetailsPageState extends State<AdminOrderDetailsPage> {
               'Amount',
               '\$${order.totalAmount.toStringAsFixed(2)}',
             ),
-            _buildDetailRow('Status', 'Paid', valueColor: Colors.green),
+            _buildDetailRow('Status', order.paymentStatus.name, valueColor: order.paymentStatus.name == "PAID" ? Colors.green : Colors.red),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildUpdateStatusButton() {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: () => _showStatusUpdateDialog(order),
-        icon: const Icon(Icons.update),
-        label: const Text('Update Order Status'),
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          elevation: 2,
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildDetailRow(
     String label,
@@ -291,7 +424,7 @@ class _AdminOrderDetailsPageState extends State<AdminOrderDetailsPage> {
     );
   }
 
-  // Status update dialog
+  // Order Status update dialog
   void _showStatusUpdateDialog(OrderModel order) {
     showDialog(
       context: context,
@@ -317,6 +450,46 @@ class _AdminOrderDetailsPageState extends State<AdminOrderDetailsPage> {
               const SizedBox(height: 16),
               ...OrderStatus.values.map(
                 (status) => _buildStatusOption(order, status),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Payment Status update dialog
+  void _showPaymentStatusUpdateDialog(OrderModel order) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          title: const Text('Update Payment Status'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Current Status: ${order.paymentStatus.name.toUpperCase()}',
+                style: TextStyle(color: Colors.grey[600], fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Select new status:',
+                style: TextStyle(fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 16),
+              ...PaymentStatus.values.map(
+                (status) => _buildPaymentStatusOption(order, status),
               ),
             ],
           ),
@@ -363,98 +536,55 @@ class _AdminOrderDetailsPageState extends State<AdminOrderDetailsPage> {
         trailing: isCurrentStatus
             ? Icon(Icons.check_circle, color: _getStatusColor(status))
             : null,
-        onTap: isCurrentStatus ? null : () => _updateOrderStatus(order, status),
+        onTap: isCurrentStatus ? null : () {
+          Navigator.of(context).pop();
+          _updateOrderStatus(status);
+        },
         enabled: !isCurrentStatus,
       ),
     );
   }
 
-  // Update order status method
-  Future<void> _updateOrderStatus(
-    OrderModel order,
-    OrderStatus newStatus,
-  ) async {
-    Navigator.of(context).pop(); // Close the dialog
+  // Payment Status option widget
+  Widget _buildPaymentStatusOption(OrderModel order, PaymentStatus status) {
+    final isCurrentStatus = order.paymentStatus == status;
+    final statusColor = status.name == "PAID" ? Colors.green : Colors.red;
 
-    try {
-      // Show loading indicator
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(child: CircularProgressIndicator()),
-      );
-
-      // Update order status in your backend/database
-      await _updateOrderInDatabase(order.id, newStatus);
-
-      // Update local order object
-      // setState(() {
-      //   order.status = newStatus;
-      // });
-
-      // Close loading indicator
-      Navigator.of(context).pop();
-
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Order status updated to ${newStatus.toString().split('.').last.toUpperCase()}',
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: isCurrentStatus
+            ? Border.all(color: statusColor, width: 2)
+            : null,
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        leading: Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: statusColor,
+            shape: BoxShape.circle,
           ),
-          backgroundColor: Colors.green,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          behavior: SnackBarBehavior.floating,
         ),
-      );
-    } catch (e) {
-      // Close loading indicator
-      Navigator.of(context).pop();
-
-      // Show error message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to update order status: $e'),
-          backgroundColor: Colors.red,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          behavior: SnackBarBehavior.floating,
+        title: Text(
+          status.name.toUpperCase(),
+          style: TextStyle(
+            fontWeight: isCurrentStatus ? FontWeight.bold : FontWeight.normal,
+            color: isCurrentStatus ? statusColor : null,
+          ),
         ),
-      );
-    }
-  }
-
-  // Method to update order in database
-  Future<void> _updateOrderInDatabase(
-    String? orderId,
-    OrderStatus newStatus,
-  ) async {
-    if (orderId == null) {
-      throw Exception('Order ID is null');
-    }
-
-    // Implement your database update logic here
-    // Example for Firestore:
-    /*
-    await FirebaseFirestore.instance
-        .collection('orders')
-        .doc(orderId)
-        .update({'status': newStatus.toString().split('.').last});
-    */
-
-    // Example for API call:
-    /*
-    final response = await http.put(
-      Uri.parse('$baseUrl/orders/$orderId'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'status': newStatus.toString().split('.').last}),
+        trailing: isCurrentStatus
+            ? Icon(Icons.check_circle, color: statusColor)
+            : null,
+        onTap: isCurrentStatus ? null : () {
+          Navigator.of(context).pop();
+          _updatePaymentStatus(status);
+        },
+        enabled: !isCurrentStatus,
+      ),
     );
-    
-    if (response.statusCode != 200) {
-      throw Exception('Failed to update order status');
-    }
-    */
-
-    // For demo purposes, just add a delay
-    await Future.delayed(const Duration(seconds: 1));
   }
 
   // Helper method to get status color
@@ -468,15 +598,10 @@ class _AdminOrderDetailsPageState extends State<AdminOrderDetailsPage> {
         return Colors.green;
       case OrderStatus.CANCELLED:
         return Colors.red;
-      default:
-        return Colors.grey;
     }
   }
 
-  // Helper method to format date
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
   }
 }
-
-// Enum for order status (add this to your OrderModel file)

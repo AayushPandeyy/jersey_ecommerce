@@ -1,0 +1,4 @@
+enum PaymentStatus{
+  PENDING,
+  PAID
+}
