@@ -39,7 +39,6 @@ dependencies:
   firebase_core: ^3.7.0
   cloud_firestore: ^5.6.8
   lottie: ^3.3.1
-  geolocator: ^14.0.2
   geocoding: ^4.0.0
   uuid: ^4.5.1
   fl_chart: ^1.0.0
@@ -48,7 +47,8 @@ dependencies:
   cloudinary_public: ^0.23.1
   http: ^1.4.0
   crypto: ^3.0.6
-
+  esewa_flutter: ^2.0.0
+  khalti_flutter: ^3.0.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

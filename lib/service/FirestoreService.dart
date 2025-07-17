@@ -94,7 +94,7 @@ Future<void> addJersey(JerseyModel jersey, List<File?> imageFiles) async {
 
       // Update jersey object with Firebase ID and image URLs
       final updatedJersey = jersey.copyWith(
-        jerseyId: Uuid().v4(), // Generate a new unique ID
+        
         jerseyImage: imageUrls,
       );
 
@@ -217,7 +217,13 @@ Future updateJersey(String id, JerseyModel updatedJersey) async {
       }
 
       // Delete the document from Firestore
-      await FirebaseFirestore.instance.collection('Jersey').doc(id).delete();
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('Jersey')
+          .where("jerseyId", isEqualTo: id)
+          .get();
+      for (final doc in querySnapshot.docs) {
+        await doc.reference.delete();
+      }
     } catch (e) {
       throw Exception('Failed to delete jersey: $e');
     }

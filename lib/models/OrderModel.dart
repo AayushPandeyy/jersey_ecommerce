@@ -1,10 +1,12 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:jersey_ecommerce/enum/OrderStatus.dart';
 import 'package:jersey_ecommerce/enum/PaymentMethod.dart';
 import 'package:jersey_ecommerce/enum/PaymentStatus.dart';
 import 'package:jersey_ecommerce/models/JerseyModel.dart';
 
 class OrderModel {
-  final String? id; // Firestore document ID
+  final String? id; // Added id field
+  final OrderStatus status;
   final JerseyModel jersey;
   final int quantity;
   final String selectedSize;
@@ -14,14 +16,19 @@ class OrderModel {
   final String city;
   final String postalCode;
   final double totalAmount;
-  final OrderStatus status;
   final PaymentMethod paymentMethod;
   final DateTime orderDate;
   final PaymentStatus paymentStatus;
+  
+  // eSewa payment fields
+  final String? khaltiTransactionId;
+  final String? khaltiProductId;
+  final String? khaltiRefId;
+  final DateTime? paymentDate;
 
   OrderModel({
-    this.id, // <-- new field
-    required this.orderDate,
+    required this.id, // Required id in constructor
+    required this.status,
     required this.jersey,
     required this.quantity,
     required this.selectedSize,
@@ -31,14 +38,80 @@ class OrderModel {
     required this.city,
     required this.postalCode,
     required this.totalAmount,
-    required this.status,
     required this.paymentMethod,
+    required this.orderDate,
     required this.paymentStatus,
+    this.khaltiTransactionId,
+    this.khaltiProductId,
+    this.khaltiRefId,
+    this.paymentDate,
   });
 
-  // copyWith method for creating updated instances
+  // Convert to Map for Firestore
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'status': status.toString(),
+      'jersey': jersey.toMap(),
+      'quantity': quantity,
+      'selectedSize': selectedSize,
+      'fullname': fullname,
+      'phoneNumber': phoneNUmber,
+      'address': address,
+      'city': city,
+      'postalCode': postalCode,
+      'totalAmount': totalAmount,
+      'paymentMethod': paymentMethod.toString(),
+      'orderDate': Timestamp.fromDate(orderDate),
+      'paymentStatus': paymentStatus.toString(),
+      'khaltiTransactionId': khaltiTransactionId,
+      'khaltiProductId': khaltiProductId,
+      'khaltiRefId': khaltiRefId,
+      'paymentDate': paymentDate != null ? Timestamp.fromDate(paymentDate!) : null,
+    };
+  }
+
+  // Create from Map (Firestore data)
+  factory OrderModel.fromMap(Map<String, dynamic> map) {
+    return OrderModel(
+      id: map['id'] ?? '', // Get id from map
+      status: OrderStatus.values.firstWhere(
+        (e) => e.toString() == map['status'],
+        orElse: () => OrderStatus.PENDING,
+      ),
+      jersey: JerseyModel.fromMap(map['jersey']),
+      quantity: map['quantity'] ?? 1,
+      selectedSize: map['selectedSize'] ?? '',
+      fullname: map['fullname'] ?? '',
+      phoneNUmber: map['phoneNumber'] ?? '',
+      address: map['address'] ?? '',
+      city: map['city'] ?? '',
+      postalCode: map['postalCode'] ?? '',
+      totalAmount: (map['totalAmount'] ?? 0.0).toDouble(),
+      paymentMethod: PaymentMethod.values.firstWhere(
+        (e) => e.toString() == map['paymentMethod'],
+        orElse: () => PaymentMethod.CASH_ON_DELIVERY,
+      ),
+      orderDate: map['orderDate'] is Timestamp 
+          ? (map['orderDate'] as Timestamp).toDate()
+          : DateTime.now(),
+      paymentStatus: PaymentStatus.values.firstWhere(
+        (e) => e.toString() == map['paymentStatus'],
+        orElse: () => PaymentStatus.PENDING,
+      ),
+      khaltiTransactionId: map['khaltiTransactionId'],
+      khaltiProductId: map['khaltiProductId'],
+      khaltiRefId: map['khaltiRefId'],
+      paymentDate: map['paymentDate'] != null 
+          ? (map['paymentDate'] as Timestamp).toDate()
+          : null,
+    );
+  }
+
+  // Copy with method for updating order
   OrderModel copyWith({
     String? id,
+    OrderStatus? status,
     JerseyModel? jersey,
     int? quantity,
     String? selectedSize,
@@ -48,14 +121,17 @@ class OrderModel {
     String? city,
     String? postalCode,
     double? totalAmount,
-    OrderStatus? status,
     PaymentMethod? paymentMethod,
     DateTime? orderDate,
     PaymentStatus? paymentStatus,
+    String? khaltiTransactionId,
+    String? khaltiProductId,
+    String? khaltiRefId,
+    DateTime? paymentDate,
   }) {
     return OrderModel(
       id: id ?? this.id,
-      orderDate: orderDate ?? this.orderDate,
+      status: status ?? this.status,
       jersey: jersey ?? this.jersey,
       quantity: quantity ?? this.quantity,
       selectedSize: selectedSize ?? this.selectedSize,
@@ -65,54 +141,18 @@ class OrderModel {
       city: city ?? this.city,
       postalCode: postalCode ?? this.postalCode,
       totalAmount: totalAmount ?? this.totalAmount,
-      status: status ?? this.status,
       paymentMethod: paymentMethod ?? this.paymentMethod,
+      orderDate: orderDate ?? this.orderDate,
       paymentStatus: paymentStatus ?? this.paymentStatus,
+      khaltiTransactionId: khaltiTransactionId ?? this.khaltiTransactionId,
+      khaltiProductId: khaltiProductId ?? this.khaltiProductId,
+      khaltiRefId: khaltiRefId ?? this.khaltiRefId,
+      paymentDate: paymentDate ?? this.paymentDate,
     );
   }
 
-  // Optional: Add toMap method for Firestore serialization
-  Map<String, dynamic> toMap() {
-    return {
-      'orderDate': orderDate.toIso8601String(),
-      'jersey': jersey.toMap(), // Assuming JerseyModel has a toMap method
-      'quantity': quantity,
-      'selectedSize': selectedSize,
-      'fullname': fullname,
-      'phoneNUmber': phoneNUmber,
-      'address': address,
-      'city': city,
-      'postalCode': postalCode,
-      'totalAmount': totalAmount,
-      'status': status.name,
-      'paymentMethod': paymentMethod.name,
-      'paymentStatus': paymentStatus.name,
-    };
-  }
-
-  // Optional: Add fromMap method for Firestore deserialization
-  factory OrderModel.fromMap(Map<String, dynamic> map, String id) {
-    return OrderModel(
-      id: id,
-      orderDate: DateTime.parse(map['orderDate']),
-      jersey: JerseyModel.fromMap(map['jersey']), // Assuming JerseyModel has a fromMap method
-      quantity: map['quantity'],
-      selectedSize: map['selectedSize'],
-      fullname: map['fullname'],
-      phoneNUmber: map['phoneNUmber'],
-      address: map['address'],
-      city: map['city'],
-      postalCode: map['postalCode'],
-      totalAmount: map['totalAmount'].toDouble(),
-      status: OrderStatus.values.firstWhere((e) => e.name == map['status']),
-      paymentMethod: PaymentMethod.values.firstWhere((e) => e.name == map['paymentMethod']),
-      paymentStatus: PaymentStatus.values.firstWhere((e) => e.name == map['paymentStatus']),
-    );
-  }
-
-  // Optional: Add toString method for debugging
   @override
   String toString() {
-    return 'OrderModel(id: $id, status: $status, paymentStatus: $paymentStatus, totalAmount: $totalAmount)';
+    return 'OrderModel{id: $id, status: $status, jersey: $jersey, quantity: $quantity, selectedSize: $selectedSize, fullname: $fullname, phoneNumber: $phoneNUmber, address: $address, city: $city, postalCode: $postalCode, totalAmount: $totalAmount, paymentMethod: $paymentMethod, orderDate: $orderDate, paymentStatus: $paymentStatus, khaltiTransactionId: $khaltiTransactionId, khaltiProductId: $khaltiProductId, khaltiRefId: $khaltiRefId, paymentDate: $paymentDate}';
   }
 }

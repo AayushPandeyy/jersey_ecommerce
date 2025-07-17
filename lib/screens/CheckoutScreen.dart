@@ -8,6 +8,7 @@ import 'package:jersey_ecommerce/models/JerseyModel.dart';
 import 'package:jersey_ecommerce/models/OrderModel.dart';
 import 'package:jersey_ecommerce/service/FirestoreService.dart';
 import 'package:jersey_ecommerce/utlitlies/Loaders.dart';
+import 'package:khalti_flutter/khalti_flutter.dart';
 
 class CheckoutPage extends StatefulWidget {
   final JerseyModel model;
@@ -51,23 +52,144 @@ class _CheckoutPageState extends State<CheckoutPage> {
     });
 
     try {
-      await firestoreService.addOrder(
-        FirebaseAuth.instance.currentUser!.uid,
-        model,
-      );
-
-      Navigator.pop(context);
-      Navigator.pop(context);
-      Loaders().showOrderPlacedPopup(context);
+      if (selectedPaymentMethod == 'Online Payment') {
+        // Process Khalti payment
+        await processKhaltiPayment(model);
+      } else {
+        // Process Cash on Delivery
+        await processCODOrder(model);
+      }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error placing order: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error placing order: $e')),
+      );
     } finally {
       setState(() {
         isLoading = false;
       });
     }
+  }
+
+  Future<void> processKhaltiPayment(OrderModel model) async {
+    try {
+      // Generate unique product ID
+      String productId = "jersey_${DateTime.now().millisecondsSinceEpoch}";
+      
+      // Configure Khalti payment
+      PaymentConfig config = PaymentConfig(
+        amount: (total * 100).toInt(), // Khalti expects amount in paisa (multiply by 100)
+        productIdentity: productId,
+        productName: widget.model.jerseyTitle,
+        productUrl: '', // Optional
+        additionalData: {
+          'size': widget.selectedSize,
+          'quantity': widget.quantity.toString(),
+          'customer_name': _nameController.text,
+          'customer_phone': _phoneController.text,
+        },
+      );
+
+      // Launch Khalti payment
+      KhaltiScope.of(context).pay(
+        config: config,
+        preferences: [
+          PaymentPreference.khalti,
+          PaymentPreference.eBanking,
+          PaymentPreference.mobileBanking,
+          PaymentPreference.connectIPS,
+          PaymentPreference.sct,
+        ],
+        onSuccess: (PaymentSuccessModel success) async {
+          // Payment successful
+          print('Khalti Payment Success: ${success.toString()}');
+          
+          OrderModel updatedModel = OrderModel(
+            status: OrderStatus.PENDING,
+            jersey: model.jersey,
+            quantity: model.quantity,
+            selectedSize: model.selectedSize,
+            fullname: model.fullname,
+            phoneNUmber: model.phoneNUmber,
+            address: model.address,
+            city: model.city,
+            postalCode: model.postalCode,
+            totalAmount: model.totalAmount,
+            paymentMethod: PaymentMethod.ONLINE_PAYMENT,
+            orderDate: model.orderDate,
+            paymentStatus: PaymentStatus.PAID,
+            khaltiTransactionId: success.token,
+            khaltiProductId: productId,
+            khaltiRefId: success.token,
+            paymentDate: DateTime.now(),
+            id: '',
+          );
+
+          try {
+            await firestoreService.addOrder(
+              FirebaseAuth.instance.currentUser!.uid,
+              updatedModel,
+            );
+
+            Navigator.pop(context);
+            Navigator.pop(context);
+            Loaders().showOrderPlacedPopup(context);
+            
+            // Show success message
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Payment successful! Transaction ID: ${success.token}'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          } catch (e) {
+            print('Error saving order: $e');
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Payment successful but failed to save order: $e'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+        },
+        onFailure: (PaymentFailureModel failure) {
+          print('Khalti Payment Failed: ${failure.toString()}');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Payment failed: ${failure.message}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        },
+        onCancel: () {
+          print('Khalti Payment Cancelled');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Payment cancelled'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        },
+      );
+    } catch (e) {
+      print('Khalti Payment Error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Payment error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> processCODOrder(OrderModel model) async {
+    await firestoreService.addOrder(
+      FirebaseAuth.instance.currentUser!.uid,
+      model,
+    );
+
+    Navigator.pop(context);
+    Navigator.pop(context);
+    Loaders().showOrderPlacedPopup(context);
   }
 
   @override
@@ -301,9 +423,15 @@ class _CheckoutPageState extends State<CheckoutPage> {
                           child: Column(
                             children: [
                               RadioListTile<String>(
-                                title: Text(
-                                  'Cash on Delivery',
-                                  style: GoogleFonts.robotoSlab(),
+                                title: Row(
+                                  children: [
+                                    Icon(Icons.money, color: Colors.green),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Cash on Delivery',
+                                      style: GoogleFonts.robotoSlab(),
+                                    ),
+                                  ],
                                 ),
                                 value: 'Cash on Delivery',
                                 groupValue: selectedPaymentMethod,
@@ -315,9 +443,36 @@ class _CheckoutPageState extends State<CheckoutPage> {
                               ),
                               Divider(height: 1, color: Colors.grey.shade300),
                               RadioListTile<String>(
-                                title: Text(
-                                  'Online Payment',
-                                  style: GoogleFonts.robotoSlab(),
+                                title: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: BoxDecoration(
+                                        color: Colors.purple,
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        'Khalti',
+                                        style: GoogleFonts.robotoSlab(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Khalti Payment',
+                                      style: GoogleFonts.robotoSlab(),
+                                    ),
+                                  ],
+                                ),
+                                subtitle: Text(
+                                  'Pay securely with Khalti',
+                                  style: GoogleFonts.robotoSlab(
+                                    fontSize: 12,
+                                    color: Colors.grey.shade600,
+                                  ),
                                 ),
                                 value: 'Online Payment',
                                 groupValue: selectedPaymentMethod,
@@ -425,36 +580,44 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     right: 0,
                     child: Container(
                       padding: const EdgeInsets.all(16),
-                      color: Colors.white,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.shade300,
+                            blurRadius: 5,
+                            offset: const Offset(0, -2),
+                          ),
+                        ],
+                      ),
                       child: ElevatedButton(
-                        onPressed: () {
-                          isLoading
-                              ? null
-                              : placeOrder(
-                                  OrderModel(
-                                    status: OrderStatus.PENDING,
-                                    jersey: widget.model,
-                                    quantity: widget.quantity,
-                                    selectedSize: widget.selectedSize,
-                                    fullname: _nameController.text,
-                                    phoneNUmber: _phoneController.text,
-                                    address: _addressController.text,
-                                    city: _cityController.text,
-                                    postalCode: _postalCodeController.text,
-                                    totalAmount: total,
-                                    paymentMethod:
-                                        selectedPaymentMethod ==
-                                            "Cash on Delivery"
-                                        ? PaymentMethod.CASH_ON_DELIVERY
-                                        : PaymentMethod.ONLINE_PAYMENT,
-                                    orderDate: DateTime.now(),
-                                    paymentStatus: PaymentStatus.PENDING
-                                  ),
-                                );
+                        onPressed: isLoading ? null : () {
+                          placeOrder(
+                            OrderModel(
+                              id: '',
+                              status: OrderStatus.PENDING,
+                              jersey: widget.model,
+                              quantity: widget.quantity,
+                              selectedSize: widget.selectedSize,
+                              fullname: _nameController.text,
+                              phoneNUmber: _phoneController.text,
+                              address: _addressController.text,
+                              city: _cityController.text,
+                              postalCode: _postalCodeController.text,
+                              totalAmount: total,
+                              paymentMethod: selectedPaymentMethod == "Cash on Delivery"
+                                  ? PaymentMethod.CASH_ON_DELIVERY
+                                  : PaymentMethod.ONLINE_PAYMENT,
+                              orderDate: DateTime.now(),
+                              paymentStatus: PaymentStatus.PENDING,
+                            ),
+                          );
                         },
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          backgroundColor: Colors.green.shade700,
+                          backgroundColor: selectedPaymentMethod == 'Online Payment' 
+                              ? Colors.purple.shade600
+                              : Colors.green.shade700,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -465,12 +628,40 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                   Colors.white,
                                 ),
                               )
-                            : Text(
-                                'Place Order - Rs. ${total.toStringAsFixed(0)}',
-                                style: GoogleFonts.russoOne(
-                                  fontSize: 16,
-                                  color: Colors.white,
-                                ),
+                            : Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  if (selectedPaymentMethod == 'Online Payment')
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        'Khalti',
+                                        style: GoogleFonts.robotoSlab(
+                                          color: Colors.purple.shade600,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  if (selectedPaymentMethod == 'Online Payment')
+                                    const SizedBox(width: 8),
+                                  Text(
+                                    selectedPaymentMethod == 'Online Payment' 
+                                        ? 'Pay Rs. ${total.toStringAsFixed(0)}'
+                                        : 'Place Order - Rs. ${total.toStringAsFixed(0)}',
+                                    style: GoogleFonts.russoOne(
+                                      fontSize: 16,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
                               ),
                       ),
                     ),

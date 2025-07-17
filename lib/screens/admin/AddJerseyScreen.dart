@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:jersey_ecommerce/models/JerseyModel.dart';
 import 'package:jersey_ecommerce/service/FirestoreService.dart';
+import 'package:uuid/uuid.dart';
 
 class AddJerseyPage extends StatefulWidget {
   const AddJerseyPage({Key? key}) : super(key: key);
@@ -94,7 +95,7 @@ class _AddJerseyPageState extends State<AddJerseyPage> {
     try {
       // Create JerseyModel without image URLs and ID for now
       final jersey = JerseyModel(
-        jerseyId: '', // Will be set by Firestore doc ID
+        jerseyId: Uuid().v4(),
         jerseyTitle: _titleController.text.trim(),
         jerseyDescription: _descriptionController.text.trim(),
         jerseyImage: [], // Will be set after image upload
