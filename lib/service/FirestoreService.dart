@@ -1,16 +1,21 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloudinary_public/cloudinary_public.dart';
+import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:jersey_ecommerce/enum/OrderStatus.dart';
 import 'package:jersey_ecommerce/enum/PaymentMethod.dart';
 import 'package:jersey_ecommerce/enum/PaymentStatus.dart';
 import 'package:jersey_ecommerce/models/CartModel.dart';
 import 'package:jersey_ecommerce/models/OrderModel.dart';
+import 'package:uuid/uuid.dart';
 import '../models/JerseyModel.dart';
+import 'package:http/http.dart' as http;
 
 class FirestoreService {
+   final cloudinary = CloudinaryPublic('dn9pqt2zt', 'gsnkt4sz');
   Stream<List<Map<String, dynamic>>> getUserDataByEmail(String email) {
     return FirebaseFirestore.instance
         .collection('Users') // The name of your collection
@@ -63,19 +68,24 @@ class FirestoreService {
         );
   }
 
-  Future<void> addJersey(JerseyModel jersey, List<File?> imageFiles) async {
+Future<void> addJersey(JerseyModel jersey, List<File?> imageFiles) async {
     try {
       final List<String> imageUrls = [];
 
       for (int i = 0; i < imageFiles.length; i++) {
         final file = imageFiles[i];
         if (file != null) {
-          final fileName = '${jersey.jerseyTitle}_$i.jpg';
-          final ref = FirebaseStorage.instance.ref().child('jerseys/$fileName');
+          // Upload to Cloudinary
+          final response = await cloudinary.uploadFile(
+            CloudinaryFile.fromFile(
+              file.path,
+              folder: 'jerseys', // Optional: organize images in folders
+              publicId: '${jersey.jerseyTitle.replaceAll(' ', '_')}_$i', // Optional: custom public ID
+            ),
+          );
 
-          await ref.putFile(file);
-          final downloadUrl = await ref.getDownloadURL();
-          imageUrls.add(downloadUrl);
+          // Get the secure URL from Cloudinary response
+          imageUrls.add(response.secureUrl);
         }
       }
 
@@ -84,7 +94,7 @@ class FirestoreService {
 
       // Update jersey object with Firebase ID and image URLs
       final updatedJersey = jersey.copyWith(
-        jerseyId: docRef.id,
+        jerseyId: Uuid().v4(), // Generate a new unique ID
         jerseyImage: imageUrls,
       );
 
@@ -94,26 +104,137 @@ class FirestoreService {
     }
   }
 
-  Future<void> updateJersey(String id, JerseyModel jersey) async {
-    await FirebaseFirestore.instance
-        .collection('Jersey')
-        .doc(id)
-        .update(jersey.toMap());
-  }
-
-  Future<void> deleteJersey(String id) async {
-    await FirebaseFirestore.instance.collection('Jersey').doc(id).delete();
-  }
-
-  Future<JerseyModel?> getJerseyById(String id) async {
-    DocumentSnapshot doc = await FirebaseFirestore.instance
-        .collection('Jersey')
-        .doc(id)
-        .get();
-    if (doc.exists) {
-      return JerseyModel.fromMap(doc.data() as Map<String, dynamic>);
+  String _extractPublicIdFromUrl(String url) {
+    // Example URL: https://res.cloudinary.com/cloud_name/image/upload/v1234567890/jerseys/jersey_name_0.jpg
+    // Extract: jerseys/jersey_name_0
+    final uri = Uri.parse(url);
+    final pathSegments = uri.pathSegments;
+    
+    // Find the index after 'upload'
+    final uploadIndex = pathSegments.indexOf('upload');
+    if (uploadIndex != -1 && uploadIndex + 2 < pathSegments.length) {
+      // Skip 'upload' and version (v1234567890)
+      final publicIdParts = pathSegments.sublist(uploadIndex + 2);
+      final publicId = publicIdParts.join('/');
+      // Remove file extension
+      return publicId.replaceAll(RegExp(r'\.[^.]*), '''),"");
     }
-    return null;
+    
+    return '';
+  }
+
+  // Helper method to delete image from Cloudinary
+  Future<void> _deleteFromCloudinary(String imageUrl) async {
+    try {
+      const String cloudName = 'dn9pqt2zt';
+      const String apiKey = '627241771152492';
+      const String apiSecret = '9vtOnXBW2RM6o0RCjPnV8-U0t5k';
+      
+      final publicId = _extractPublicIdFromUrl(imageUrl);
+      if (publicId.isEmpty) return;
+
+      final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
+      final stringToSign = 'public_id=$publicId&timestamp=$timestamp$apiSecret';
+      
+      // You'll need to add crypto package for this
+      final signature = _generateSignature(stringToSign);
+
+      final uri = Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/destroy');
+      
+      final response = await http.post(
+        uri,
+        body: {
+          'public_id': publicId,
+          'timestamp': timestamp,
+          'api_key': apiKey,
+          'signature': signature,
+        },
+      );
+
+      if (response.statusCode != 200) {
+        print('Failed to delete image from Cloudinary: ${response.body}');
+      }
+    } catch (e) {
+      print('Error deleting image from Cloudinary: $e');
+      // Don't throw error here to avoid blocking the main operation
+    }
+  }
+
+String _generateSignature(String stringToSign) {
+  const String apiSecret = '9vtOnXBW2RM6o0RCjPnV8-U0t5k'; 
+  
+  var key = utf8.encode(apiSecret);
+  var bytes = utf8.encode(stringToSign);
+  var hmacSha1 = Hmac(sha1, key);
+  var digest = hmacSha1.convert(bytes);
+  return digest.toString();
+}
+
+  // Updated update method
+Future updateJersey(String id, JerseyModel updatedJersey) async {
+  try {
+    // Get current jersey data to access existing images
+    final docSnapshot = await FirebaseFirestore.instance
+        .collection('Jersey')
+        .where("jerseyId", isEqualTo: id)
+        .get();
+        
+    if (docSnapshot.docs.isEmpty) {
+      throw Exception('Jersey not found');
+    }
+
+    final currentJersey = JerseyModel.fromMap(docSnapshot.docs.first.data());
+    
+    // Preserve existing images and only update text fields
+    final jerseyToUpdate = updatedJersey.copyWith(
+      jerseyImage: currentJersey.jerseyImage, // Keep existing images
+    );
+
+    // Get the document reference from the query result and update it
+    final docRef = docSnapshot.docs.first.reference;
+    await docRef.update(jerseyToUpdate.toMap());
+  } catch (e) {
+    throw Exception('Failed to update jersey: $e');
+  }
+}
+
+  // Updated delete method
+  Future<void> deleteJersey(String id) async {
+    try {
+      // Get jersey data to access image URLs
+      final docSnapshot = await FirebaseFirestore.instance
+          .collection('Jersey')
+          .where("jerseyId", isEqualTo: id)
+          .get();
+      
+      if (docSnapshot.docs.isNotEmpty) {
+        final jersey = JerseyModel.fromMap(docSnapshot.docs.first.data());
+        
+        // Delete images from Cloudinary
+        for (String imageUrl in jersey.jerseyImage) {
+          await _deleteFromCloudinary(imageUrl);
+        }
+      }
+
+      // Delete the document from Firestore
+      await FirebaseFirestore.instance.collection('Jersey').doc(id).delete();
+    } catch (e) {
+      throw Exception('Failed to delete jersey: $e');
+    }
+  }
+
+
+  Stream<JerseyModel?> getJerseyById(String id) {
+    return FirebaseFirestore.instance
+        .collection('Jersey')
+        .where("jerseyId", isEqualTo: id)
+        .snapshots()
+        .map((snapshot) {
+          if (snapshot.docs.isNotEmpty) {
+            return JerseyModel.fromMap(snapshot.docs.first.data());
+          }
+          return null;
+        });
   }
 
   Future<void> addOrder(String userId, OrderModel order) async {

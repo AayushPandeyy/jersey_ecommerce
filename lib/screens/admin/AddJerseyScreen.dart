@@ -22,6 +22,7 @@ class _AddJerseyPageState extends State<AddJerseyPage> {
   List<File?> _selectedImages = [null, null, null, null];
   final ImagePicker _picker = ImagePicker();
   bool _isLoading = false;
+  String _uploadStatus = '';
 
   @override
   void dispose() {
@@ -37,6 +38,8 @@ class _AddJerseyPageState extends State<AddJerseyPage> {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.gallery,
         imageQuality: 80,
+        maxHeight: 1024,
+        maxWidth: 1024,
       );
 
       if (image != null) {
@@ -57,13 +60,21 @@ class _AddJerseyPageState extends State<AddJerseyPage> {
 
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.red),
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 4),
+      ),
     );
   }
 
   void _showSuccessSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.green),
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 3),
+      ),
     );
   }
 
@@ -75,7 +86,10 @@ class _AddJerseyPageState extends State<AddJerseyPage> {
       return;
     }
 
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _uploadStatus = 'Preparing jersey data...';
+    });
 
     try {
       // Create JerseyModel without image URLs and ID for now
@@ -88,8 +102,16 @@ class _AddJerseyPageState extends State<AddJerseyPage> {
         rating: 4.5,
       );
 
+      setState(() {
+        _uploadStatus = 'Uploading images to Cloudinary...';
+      });
+
       // Use service to handle upload + Firestore
       await FirestoreService().addJersey(jersey, _selectedImages);
+
+      setState(() {
+        _uploadStatus = 'Saving to database...';
+      });
 
       _showSuccessSnackBar('Jersey added successfully!');
 
@@ -100,11 +122,15 @@ class _AddJerseyPageState extends State<AddJerseyPage> {
       _ratingController.clear();
       setState(() {
         _selectedImages = [null, null, null, null];
+        _uploadStatus = '';
       });
     } catch (e) {
-      _showErrorSnackBar('Error saving jersey: $e');
+      _showErrorSnackBar('Error saving jersey: ${e.toString()}');
     } finally {
-      setState(() => _isLoading = false);
+      setState(() {
+        _isLoading = false;
+        _uploadStatus = '';
+      });
     }
   }
 
@@ -148,10 +174,10 @@ class _AddJerseyPageState extends State<AddJerseyPage> {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.image, color: Colors.blue[700], size: 24),
+                        Icon(Icons.cloud_upload, color: Colors.blue[700], size: 24),
                         const SizedBox(width: 8),
                         const Text(
-                          'Jersey Images',
+                          'Jersey Images (Cloudinary)',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -161,7 +187,7 @@ class _AddJerseyPageState extends State<AddJerseyPage> {
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'Add up to 4 images of the jersey',
+                      'Add up to 4 images of the jersey (uploaded to Cloudinary)',
                       style: TextStyle(color: Colors.grey, fontSize: 14),
                     ),
                     const SizedBox(height: 20),
@@ -170,15 +196,15 @@ class _AddJerseyPageState extends State<AddJerseyPage> {
                       physics: const NeverScrollableScrollPhysics(),
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 10,
-                            mainAxisSpacing: 10,
-                            childAspectRatio: 1,
-                          ),
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                        childAspectRatio: 1,
+                      ),
                       itemCount: 4,
                       itemBuilder: (context, index) {
                         return GestureDetector(
-                          onTap: () => _pickImage(index),
+                          onTap: _isLoading ? null : () => _pickImage(index),
                           child: Container(
                             decoration: BoxDecoration(
                               color: Colors.grey[100],
@@ -218,25 +244,26 @@ class _AddJerseyPageState extends State<AddJerseyPage> {
                                           height: double.infinity,
                                         ),
                                       ),
-                                      Positioned(
-                                        top: 5,
-                                        right: 5,
-                                        child: GestureDetector(
-                                          onTap: () => _removeImage(index),
-                                          child: Container(
-                                            padding: const EdgeInsets.all(4),
-                                            decoration: const BoxDecoration(
-                                              color: Colors.red,
-                                              shape: BoxShape.circle,
-                                            ),
-                                            child: const Icon(
-                                              Icons.close,
-                                              color: Colors.white,
-                                              size: 16,
+                                      if (!_isLoading)
+                                        Positioned(
+                                          top: 5,
+                                          right: 5,
+                                          child: GestureDetector(
+                                            onTap: () => _removeImage(index),
+                                            child: Container(
+                                              padding: const EdgeInsets.all(4),
+                                              decoration: const BoxDecoration(
+                                                color: Colors.red,
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: const Icon(
+                                                Icons.close,
+                                                color: Colors.white,
+                                                size: 16,
+                                              ),
                                             ),
                                           ),
                                         ),
-                                      ),
                                     ],
                                   ),
                           ),
@@ -289,6 +316,7 @@ class _AddJerseyPageState extends State<AddJerseyPage> {
                     // Jersey Title
                     TextFormField(
                       controller: _titleController,
+                      enabled: !_isLoading,
                       decoration: InputDecoration(
                         labelText: 'Jersey Title',
                         prefixIcon: const Icon(Icons.title),
@@ -311,6 +339,7 @@ class _AddJerseyPageState extends State<AddJerseyPage> {
                     // Jersey Description
                     TextFormField(
                       controller: _descriptionController,
+                      enabled: !_isLoading,
                       maxLines: 4,
                       decoration: InputDecoration(
                         labelText: 'Jersey Description',
@@ -331,9 +360,10 @@ class _AddJerseyPageState extends State<AddJerseyPage> {
 
                     const SizedBox(height: 16),
 
-                    // Price and Rating Row
+                    // Price Field
                     TextFormField(
                       controller: _priceController,
+                      enabled: !_isLoading,
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
                         labelText: 'Price (\$)',
@@ -358,7 +388,43 @@ class _AddJerseyPageState extends State<AddJerseyPage> {
                 ),
               ),
 
-              const SizedBox(height: 30),
+              const SizedBox(height: 20),
+
+              // Upload Status
+              if (_isLoading && _uploadStatus.isNotEmpty)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue[200]!),
+                  ),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.blue[700]!),
+                          strokeWidth: 2,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          _uploadStatus,
+                          style: TextStyle(
+                            color: Colors.blue[700],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+              const SizedBox(height: 20),
 
               // Save Button
               SizedBox(
@@ -394,7 +460,7 @@ class _AddJerseyPageState extends State<AddJerseyPage> {
                         ),
                 ),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
             ],
           ),
         ),

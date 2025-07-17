@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:jersey_ecommerce/models/JerseyModel.dart';
+import 'package:jersey_ecommerce/screens/admin/UpdateJerseyPage.dart';
 import 'package:jersey_ecommerce/service/FirestoreService.dart';
 
 class JerseyDetailsPage extends StatefulWidget {
@@ -13,99 +14,156 @@ class JerseyDetailsPage extends StatefulWidget {
 
 class _JerseyDetailsPageState extends State<JerseyDetailsPage> {
   int selectedImageIndex = 0;
-
   bool isFavorite = false;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.white,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          IconButton(onPressed: () {}, icon: Icon(Icons.edit)),
-          IconButton(
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (BuildContext context) {
-                  return AlertDialog(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
+    return StreamBuilder<JerseyModel?>(
+      stream: FirestoreService().getJerseyById(widget.jersey.jerseyId),
+      builder: (context, asyncSnapshot) {
+        if (asyncSnapshot.connectionState == ConnectionState.waiting) {
+          return Scaffold(
+            appBar: AppBar(
+              title: Text('Loading...'),
+            ),
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (asyncSnapshot.hasError) {
+          return Scaffold(
+            appBar: AppBar(
+              title: Text('Error'),
+            ),
+            body: Center(
+              child: Text('Error: ${asyncSnapshot.error}'),
+            ),
+          );
+        }
+
+        if (!asyncSnapshot.hasData || asyncSnapshot.data == null) {
+          return Scaffold(
+            appBar: AppBar(
+              title: Text('Not Found'),
+            ),
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, size: 64, color: Colors.grey),
+                  SizedBox(height: 16),
+                  Text('Jersey not found'),
+                  SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text('Go Back'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        final currentJersey = asyncSnapshot.data!;
+
+        return Scaffold(
+          backgroundColor: Colors.grey[50],
+          appBar: AppBar(
+            elevation: 0,
+            backgroundColor: Colors.white,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.black),
+              onPressed: () => Navigator.pop(context),
+            ),
+            actions: [
+              IconButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => UpdateJerseyPage(jersey: currentJersey),
                     ),
-                    title: Text(
-                      'Delete the jersey',
-                      style: GoogleFonts.pixelifySans(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    content: Text(
-                      'Are you sure you want to delete "${widget.jersey.jerseyTitle}"?',
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text(
-                          'Cancel',
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () async {
-                          await FirestoreService().deleteJersey(
-                            widget.jersey.jerseyId,
-                          );
-                          Navigator.pop(context);
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                '${widget.jersey.jerseyTitle} deleted',
-                              ),
-                              backgroundColor: Colors.red,
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          );
-                        },
-                        child: const Text(
-                          'Delete',
-                          style: TextStyle(color: Colors.red),
-                        ),
-                      ),
-                    ],
                   );
                 },
-              );
-            },
-            icon: Icon(Icons.delete, color: Colors.red),
+                icon: Icon(Icons.edit),
+              ),
+              IconButton(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        title: Text(
+                          'Delete the jersey',
+                          style: GoogleFonts.pixelifySans(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        content: Text(
+                          'Are you sure you want to delete "${currentJersey.jerseyTitle}"?',
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text(
+                              'Cancel',
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () async {
+                              await FirestoreService().deleteJersey(
+                                currentJersey.jerseyId,
+                              );
+                              Navigator.pop(context);
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    '${currentJersey.jerseyTitle} deleted',
+                                  ),
+                                  backgroundColor: Colors.red,
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              );
+                            },
+                            child: const Text(
+                              'Delete',
+                              style: TextStyle(color: Colors.red),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+                icon: Icon(Icons.delete, color: Colors.red),
+              ),
+            ],
           ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildImageSection(),
-
-            _buildProductDetails(),
-
-            _buildDescription(),
-          ],
-        ),
-      ),
+          body: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildImageSection(currentJersey),
+                _buildProductDetails(currentJersey),
+                _buildDescription(currentJersey),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildImageSection() {
+  Widget _buildImageSection(JerseyModel jersey) {
     return Container(
       height: 400,
       color: Colors.white,
@@ -114,7 +172,7 @@ class _JerseyDetailsPageState extends State<JerseyDetailsPage> {
           // Main Image
           Expanded(
             child: PageView.builder(
-              itemCount: widget.jersey.jerseyImage.length,
+              itemCount: jersey.jerseyImage.length,
               onPageChanged: (index) {
                 setState(() {
                   selectedImageIndex = index;
@@ -127,7 +185,7 @@ class _JerseyDetailsPageState extends State<JerseyDetailsPage> {
                     borderRadius: BorderRadius.circular(16),
                     image: DecorationImage(
                       image: NetworkImage(
-                        widget.jersey.jerseyImage[selectedImageIndex],
+                        jersey.jerseyImage[selectedImageIndex],
                       ),
                       fit: BoxFit.cover,
                     ),
@@ -144,7 +202,7 @@ class _JerseyDetailsPageState extends State<JerseyDetailsPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(
-                widget.jersey.jerseyImage.length,
+                jersey.jerseyImage.length,
                 (index) => GestureDetector(
                   onTap: () {
                     setState(() {
@@ -164,7 +222,7 @@ class _JerseyDetailsPageState extends State<JerseyDetailsPage> {
                         width: 2,
                       ),
                       image: DecorationImage(
-                        image: NetworkImage(widget.jersey.jerseyImage[index]),
+                        image: NetworkImage(jersey.jerseyImage[index]),
                         fit: BoxFit.cover,
                       ),
                     ),
@@ -178,18 +236,16 @@ class _JerseyDetailsPageState extends State<JerseyDetailsPage> {
     );
   }
 
-  Widget _buildProductDetails() {
+  Widget _buildProductDetails(JerseyModel jersey) {
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Team and Brand
-
           // Product Name
           Text(
-            widget.jersey.jerseyTitle,
+            jersey.jerseyTitle,
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -203,7 +259,7 @@ class _JerseyDetailsPageState extends State<JerseyDetailsPage> {
           Row(
             children: [
               Text(
-                '\$${widget.jersey.jerseyPrice}',
+                '\$${jersey.jerseyPrice}',
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
@@ -217,7 +273,7 @@ class _JerseyDetailsPageState extends State<JerseyDetailsPage> {
                   Row(
                     children: List.generate(5, (index) {
                       return Icon(
-                        index < 4 ? Icons.star : Icons.star_border,
+                        index < jersey.rating.floor() ? Icons.star : Icons.star_border,
                         color: Colors.amber,
                         size: 20,
                       );
@@ -225,7 +281,7 @@ class _JerseyDetailsPageState extends State<JerseyDetailsPage> {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    widget.jersey.rating.toString(),
+                    jersey.rating.toString(),
                     style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
                   ),
                 ],
@@ -234,14 +290,12 @@ class _JerseyDetailsPageState extends State<JerseyDetailsPage> {
           ),
 
           const SizedBox(height: 16),
-
-          // Quick Info
         ],
       ),
     );
   }
 
-  Widget _buildDescription() {
+  Widget _buildDescription(JerseyModel jersey) {
     return Container(
       color: Colors.white,
       margin: const EdgeInsets.only(top: 8),
@@ -255,7 +309,7 @@ class _JerseyDetailsPageState extends State<JerseyDetailsPage> {
           ),
           const SizedBox(height: 12),
           Text(
-            widget.jersey.jerseyDescription,
+            jersey.jerseyDescription,
             style: TextStyle(
               fontSize: 14,
               color: Colors.grey.shade700,
