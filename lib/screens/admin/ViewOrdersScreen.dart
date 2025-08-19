@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:jersey_ecommerce/models/OrderModel.dart';
+import 'package:jersey_ecommerce/models/CartOrderModel.dart';
 import 'package:jersey_ecommerce/models/JerseyModel.dart';
 import 'package:jersey_ecommerce/enum/OrderStatus.dart';
 import 'package:jersey_ecommerce/enum/PaymentMethod.dart';
@@ -14,8 +14,8 @@ class ViewOrdersPage extends StatefulWidget {
 }
 
 class _ViewOrdersPageState extends State<ViewOrdersPage> {
-  List<OrderModel> orders = [];
-  List<OrderModel> filteredOrders = [];
+  List<CartOrderModel> orders = [];
+  List<CartOrderModel> filteredOrders = [];
   bool isLoading = true;
   OrderStatus? selectedStatusFilter;
 
@@ -62,7 +62,6 @@ class _ViewOrdersPageState extends State<ViewOrdersPage> {
     switch (status) {
       case OrderStatus.PENDING:
         return Colors.orange;
-
       case OrderStatus.SHIPPED:
         return Colors.green;
       case OrderStatus.DELIVERED:
@@ -177,7 +176,6 @@ class _ViewOrdersPageState extends State<ViewOrdersPage> {
                       _buildFilterChip('All', null),
                       const SizedBox(width: 8),
                       _buildFilterChip('Pending', OrderStatus.PENDING),
-
                       const SizedBox(width: 8),
                       _buildFilterChip('Shipped', OrderStatus.SHIPPED),
                       const SizedBox(width: 8),
@@ -193,7 +191,7 @@ class _ViewOrdersPageState extends State<ViewOrdersPage> {
 
           // Orders List
           Expanded(
-            child: StreamBuilder<List<OrderModel>>(
+            child: StreamBuilder<List<CartOrderModel>>(
               stream: FirestoreService().getOrdersStream(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -251,7 +249,11 @@ class _ViewOrdersPageState extends State<ViewOrdersPage> {
     );
   }
 
-  Widget _buildOrderCard(OrderModel order) {
+  Widget _buildOrderCard(CartOrderModel order) {
+    // Get the first item for display
+    final firstItem = order.items.isNotEmpty ? order.items.first : null;
+    final totalQuantity = order.items.fold<int>(0, (sum, item) => sum + item.quantity);
+    
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
@@ -315,7 +317,20 @@ class _ViewOrdersPageState extends State<ViewOrdersPage> {
                       color: Colors.grey[200],
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.sports_soccer, color: Colors.grey),
+                    child: firstItem?.jersey.jerseyImage.isNotEmpty == true
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              firstItem!.jersey.jerseyImage[0],
+                              width: 60,
+                              height: 60,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Icon(Icons.sports_soccer, color: Colors.grey);
+                              },
+                            ),
+                          )
+                        : const Icon(Icons.sports_soccer, color: Colors.grey),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -323,7 +338,7 @@ class _ViewOrdersPageState extends State<ViewOrdersPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          order.jersey.jerseyTitle,
+                          firstItem?.jersey.jerseyTitle ?? 'Unknown Jersey',
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -333,12 +348,20 @@ class _ViewOrdersPageState extends State<ViewOrdersPage> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Size: ${order.selectedSize} • Qty: ${order.quantity}',
+                          'Size: ${firstItem?.selectedSize ?? 'N/A'} • Total Qty: $totalQuantity',
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey[600],
                           ),
                         ),
+                        if (order.items.length > 1)
+                          Text(
+                            '+ ${order.items.length - 1} more items',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey[500],
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -418,7 +441,7 @@ class _ViewOrdersPageState extends State<ViewOrdersPage> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '\$${order.totalAmount.toStringAsFixed(2)}',
+                        'Rs. ${order.totalAmount.toStringAsFixed(2)}',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,

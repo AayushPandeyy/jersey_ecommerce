@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:jersey_ecommerce/models/CartModel.dart';
+import 'package:jersey_ecommerce/screens/CheckoutScreen.dart';
 import 'package:jersey_ecommerce/service/FirestoreService.dart';
 
 class CartPage extends StatelessWidget {
@@ -25,7 +26,7 @@ class CartPage extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError || !snapshot.hasData) {
-            return const Center(child: Text('Something went wrong.'));
+            return  Center(child: Text('Something went wrong. ${snapshot.error}'));
           }
 
           final cartItems = snapshot.data!;
@@ -35,7 +36,7 @@ class CartPage extends StatelessWidget {
 
           double total = cartItems.fold(
             0,
-            (sum, item) => sum + item.jerseyPrice * item.quantity,
+            (sum, item) => sum + item.jersey.jerseyPrice * item.quantity,
           );
 
           return Column(
@@ -51,9 +52,9 @@ class CartPage extends StatelessWidget {
                       child: ListTile(
                         leading: ClipRRect(
                           borderRadius: BorderRadius.circular(8),
-                          child: Image.network(item.jerseyImage, width: 60, height: 60, fit: BoxFit.cover),
+                          child: Image.network(item.jersey.jerseyImage[0], width: 60, height: 60, fit: BoxFit.cover),
                         ),
-                        title: Text(item.jerseyTitle, style: GoogleFonts.marcellus(fontSize: 16)),
+                        title: Text(item.jersey.jerseyTitle, style: GoogleFonts.marcellus(fontSize: 16)),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -64,7 +65,7 @@ class CartPage extends StatelessWidget {
                         trailing: Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            Text('Rs. ${(item.jerseyPrice * item.quantity).toStringAsFixed(0)}',
+                            Text('Rs. ${(item.jersey.jerseyPrice * item.quantity).toStringAsFixed(0)}',
                                 style: GoogleFonts.robotoSlab(fontWeight: FontWeight.bold)),
                             const SizedBox(height: 8),
                             GestureDetector(
@@ -101,7 +102,7 @@ class CartPage extends StatelessWidget {
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () {
-                          // TODO: Navigate to checkout
+                          Navigator.push(context, MaterialPageRoute(builder: (context)=>CheckoutPage(cartItems: cartItems)));
                         },
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),

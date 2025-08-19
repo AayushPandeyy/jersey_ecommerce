@@ -43,10 +43,10 @@ class LoginChecker extends StatelessWidget {
 
                   if (role == 'admin') {
                     return const AdminNavigationScreen();
-                  } else if (role == 'customer') {
+                  } else if (role == 'customer' && FirebaseAuth.instance.currentUser!.emailVerified) {
                     return const NavigationScreen();
                   } else {
-                    return const Center(child: Text('Unknown role'));
+                    return AuthPage();
                   }
                 } else {
                   return const Center(child: Text('No user data found'));

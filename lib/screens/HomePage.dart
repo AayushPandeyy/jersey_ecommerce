@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:jersey_ecommerce/models/JerseyModel.dart';
 import 'package:jersey_ecommerce/screens/EditShippingAdressPage.dart';
 import 'package:jersey_ecommerce/screens/ProductPage.dart';
+import 'package:jersey_ecommerce/service/FirebaseAuthService.dart';
 import 'package:jersey_ecommerce/service/FirestoreService.dart';
 
 class HomePage extends StatefulWidget {
@@ -16,13 +17,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
 
   final FirestoreService service = FirestoreService();
-  List<String> categoryImages = [
-    "https://download.logo.wine/logo/Adidas/Adidas-Logo.wine.png",
-    "https://static.cdnlogo.com/logos/p/3/puma-thumb.png",
-    "https://cdn.freebiesupply.com/logos/large/2x/new-balance-2-logo-png-transparent.png",
-    "https://logos-world.net/wp-content/uploads/2020/09/Nike-Logo.png",
-    "https://logos-world.net/wp-content/uploads/2021/08/Under-Armour-Logo.png",
-  ];
+
 
   @override
   Widget build(BuildContext context) {
@@ -50,6 +45,9 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
             ),
+            IconButton(onPressed: () async{
+              await AuthFirebaseService().logout();
+            }, icon: Icon(Icons.logout, color: Colors.red[700],)),
           ],
         ),
         body: StreamBuilder<List<JerseyModel>>(
@@ -67,20 +65,10 @@ class _HomePageState extends State<HomePage> {
                   const SizedBox(height: 20),
                   Center(child: _locationBar(context)),
                   const SizedBox(height: 20),
-                  _newArrivalCard(context),
+                  _newArrivalCard(context,data!.length),
 
                   const SizedBox(height: 25),
-                  SizedBox(
-                    height: 60,
-                    child: ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      scrollDirection: Axis.horizontal,
-                      itemCount: categoryImages.length,
-                      itemBuilder: (context, index) {
-                        return categorySelector(context, categoryImages[index]);
-                      },
-                    ),
-                  ),
+                  
                   const SizedBox(height: 20),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -198,7 +186,7 @@ Widget _locationBar(BuildContext context) {
   );
 }
 
-Widget _newArrivalCard(BuildContext context) {
+Widget _newArrivalCard(BuildContext context,int count) {
   return Container(
     width: MediaQuery.sizeOf(context).width * 0.9,
     height: 200,
@@ -304,7 +292,7 @@ Widget _newArrivalCard(BuildContext context) {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          "209 products",
+                          "${count} products",
                           style: GoogleFonts.marcellus(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
@@ -313,49 +301,7 @@ Widget _newArrivalCard(BuildContext context) {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
-                    // Call to action
-                    GestureDetector(
-                      onTap: () {
-                        // Handle shop now tap
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(25),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child:  Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              "Shop Now",
-                              style: GoogleFonts.marcellus(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xff0F4C75),
-                              ),
-                            ),
-                            SizedBox(width: 4),
-                            Icon(
-                              Icons.arrow_forward,
-                              color: Color(0xff0F4C75),
-                              size: 14,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                    
                   ],
                 ),
               ),

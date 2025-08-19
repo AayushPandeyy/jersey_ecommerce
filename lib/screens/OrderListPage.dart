@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:jersey_ecommerce/models/OrderModel.dart';
+import 'package:jersey_ecommerce/models/CartOrderModel.dart';
 import 'package:jersey_ecommerce/enum/OrderStatus.dart';
 import 'package:jersey_ecommerce/enum/PaymentMethod.dart';
 import 'package:jersey_ecommerce/screens/OrderDetailPage.dart';
@@ -67,7 +67,7 @@ class OrdersListPage extends StatelessWidget {
             ),
           ),
         ),
-        body: StreamBuilder<List<OrderModel>>(
+        body: StreamBuilder<List<CartOrderModel>>(
           stream: firestoreService.getUserOrders(userId),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
@@ -122,6 +122,9 @@ class OrdersListPage extends StatelessWidget {
                 itemCount: orders.length,
                 itemBuilder: (context, index) {
                   final order = orders[index];
+                  final firstItem = order.items.first; // Get the first item for display
+                  final hasMultipleItems = order.items.length > 1;
+                  
                   return Card(
                     margin: const EdgeInsets.only(bottom: 16),
                     elevation: 2,
@@ -147,7 +150,7 @@ class OrdersListPage extends StatelessWidget {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  'Order #${index + 1}',
+                                  'Order #${order.id?.substring(0, 8) ?? (index + 1).toString()}',
                                   style: GoogleFonts.marcellus(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
@@ -176,23 +179,58 @@ class OrdersListPage extends StatelessWidget {
                             const SizedBox(height: 12),
                             Row(
                               children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.network(
-                                    order.jersey.jerseyImage[0],
-                                    width: 60,
-                                    height: 60,
-                                    fit: BoxFit.cover,
-                                  ),
+                                Stack(
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Image.network(
+                                        firstItem.jersey.jerseyImage.isNotEmpty
+                                            ? firstItem.jersey.jerseyImage[0]
+                                            : 'https://via.placeholder.com/60',
+                                        width: 60,
+                                        height: 60,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) {
+                                          return Container(
+                                            width: 60,
+                                            height: 60,
+                                            color: Colors.grey.shade300,
+                                            child: const Icon(Icons.image_not_supported),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                    if (hasMultipleItems)
+                                      Positioned(
+                                        top: 0,
+                                        right: 0,
+                                        child: Container(
+                                          padding: const EdgeInsets.all(4),
+                                          decoration: const BoxDecoration(
+                                            color: Colors.red,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Text(
+                                            '${order.items.length}',
+                                            style: GoogleFonts.robotoSlab(
+                                              fontSize: 10,
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        order.jersey.jerseyTitle,
+                                        hasMultipleItems
+                                            ? '${firstItem.jersey.jerseyTitle} ${order.items.length > 1 ? '+ ${order.items.length - 1} more' : ''}'
+                                            : firstItem.jersey.jerseyTitle,
                                         style: GoogleFonts.marcellus(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w600,
@@ -202,20 +240,33 @@ class OrdersListPage extends StatelessWidget {
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        'Size: ${order.selectedSize} • Qty: ${order.quantity}',
+                                        hasMultipleItems
+                                            ? 'Total Items: ${order.items.length}'
+                                            : 'Size: ${firstItem.selectedSize} • Qty: ${firstItem.quantity}',
                                         style: GoogleFonts.robotoSlab(
                                           fontSize: 12,
                                           color: Colors.grey.shade600,
                                         ),
                                       ),
                                       const SizedBox(height: 4),
-                                      Text(
-                                        getPaymentMethodText(
-                                            order.paymentMethod),
-                                        style: GoogleFonts.robotoSlab(
-                                          fontSize: 12,
-                                          color: Colors.grey.shade600,
-                                        ),
+                                      Row(
+                                        children: [
+                                          Text(
+                                            getPaymentMethodText(order.paymentMethod),
+                                            style: GoogleFonts.robotoSlab(
+                                              fontSize: 12,
+                                              color: Colors.grey.shade600,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            '• ${order.orderDate.day}/${order.orderDate.month}/${order.orderDate.year}',
+                                            style: GoogleFonts.robotoSlab(
+                                              fontSize: 12,
+                                              color: Colors.grey.shade600,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   ),

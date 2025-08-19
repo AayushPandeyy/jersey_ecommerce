@@ -2,13 +2,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:jersey_ecommerce/enum/PaymentStatus.dart';
-import 'package:jersey_ecommerce/models/OrderModel.dart';
+import 'package:jersey_ecommerce/models/CartOrderModel.dart';
 import 'package:jersey_ecommerce/enum/OrderStatus.dart';
 import 'package:jersey_ecommerce/enum/PaymentMethod.dart';
 import 'package:jersey_ecommerce/service/FirestoreService.dart';
 
 class OrderDetailPage extends StatelessWidget {
-  final OrderModel order;
+  final CartOrderModel order;
   
   const OrderDetailPage({super.key, required this.order});
 
@@ -16,14 +16,12 @@ class OrderDetailPage extends StatelessWidget {
     switch (status) {
       case OrderStatus.PENDING:
         return Colors.orange;
-      
       case OrderStatus.SHIPPED:
         return Colors.purple;
       case OrderStatus.DELIVERED:
         return Colors.green;
       case OrderStatus.CANCELLED:
         return Colors.red;
-
     }
   }
 
@@ -37,7 +35,6 @@ class OrderDetailPage extends StatelessWidget {
         return 'DELIVERED';
       case OrderStatus.CANCELLED:
         return 'CANCELLED';
-
     }
   }
 
@@ -47,7 +44,6 @@ class OrderDetailPage extends StatelessWidget {
         return 'Cash on Delivery';
       case PaymentMethod.ONLINE_PAYMENT:
         return 'Online Payment';
-
     }
   }
 
@@ -243,7 +239,7 @@ class OrderDetailPage extends StatelessWidget {
                 const SizedBox(height: 24),
               ],
 
-              // Product Details
+              // Product Details - Updated to handle multiple items
               Text(
                 'Product Details',
                 style: GoogleFonts.marcellus(
@@ -253,7 +249,9 @@ class OrderDetailPage extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               
-              Container(
+              // Display all items in the order
+              ...order.items.map((item) => Container(
+                margin: const EdgeInsets.only(bottom: 16),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.grey.shade300),
@@ -264,7 +262,7 @@ class OrderDetailPage extends StatelessWidget {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
                       child: Image.network(
-                        order.jersey.jerseyImage[0],
+                        item.jersey.jerseyImage[0],
                         width: 80,
                         height: 80,
                         fit: BoxFit.cover,
@@ -276,7 +274,7 @@ class OrderDetailPage extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            order.jersey.jerseyTitle,
+                            item.jersey.jerseyTitle,
                             style: GoogleFonts.marcellus(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -288,14 +286,14 @@ class OrderDetailPage extends StatelessWidget {
                               Icon(Icons.star, color: Colors.amber, size: 16),
                               const SizedBox(width: 4),
                               Text(
-                                order.jersey.rating.toString(),
+                                item.jersey.rating.toString(),
                                 style: GoogleFonts.robotoSlab(fontSize: 14),
                               ),
                             ],
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Size: ${order.selectedSize}',
+                            'Size: ${item.selectedSize}',
                             style: GoogleFonts.robotoSlab(
                               fontSize: 14,
                               color: Colors.grey.shade600,
@@ -303,7 +301,7 @@ class OrderDetailPage extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Quantity: ${order.quantity}',
+                            'Quantity: ${item.quantity}',
                             style: GoogleFonts.robotoSlab(
                               fontSize: 14,
                               color: Colors.grey.shade600,
@@ -311,7 +309,15 @@ class OrderDetailPage extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Rs. ${order.jersey.jerseyPrice}',
+                            'Rs. ${item.itemPrice.toStringAsFixed(0)} x ${item.quantity}',
+                            style: GoogleFonts.robotoSlab(
+                              fontSize: 14,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Total: Rs. ${item.totalPrice.toStringAsFixed(0)}',
                             style: GoogleFonts.marcellus(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -322,11 +328,11 @@ class OrderDetailPage extends StatelessWidget {
                     ),
                   ],
                 ),
-              ),
+              )).toList(),
 
               const SizedBox(height: 24),
 
-              // Shipping Information
+              // Shipping Information - Updated field name
               Text(
                 'Shipping Information',
                 style: GoogleFonts.marcellus(
@@ -361,7 +367,7 @@ class OrderDetailPage extends StatelessWidget {
                         Icon(Icons.phone, color: Colors.grey.shade600, size: 20),
                         const SizedBox(width: 8),
                         Text(
-                          order.phoneNUmber,
+                          order.phoneNumber, // Fixed field name
                           style: GoogleFonts.robotoSlab(fontSize: 16),
                         ),
                       ],
@@ -444,6 +450,32 @@ class OrderDetailPage extends StatelessWidget {
                         ),
                       ],
                     ),
+                    
+                    // Show Khalti payment details if available
+                    if (order.khaltiTransactionId != null) ...[
+                      Divider(
+                        color: Colors.grey.shade300,
+                        thickness: 1,
+                        height: 24,
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Transaction ID',
+                            style: GoogleFonts.robotoSlab(fontSize: 16),
+                          ),
+                          Text(
+                            order.khaltiTransactionId!,
+                            style: GoogleFonts.robotoSlab(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    
                     Divider(
                       color: Colors.grey.shade300,
                       thickness: 1,
@@ -485,6 +517,20 @@ class OrderDetailPage extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
+                          'Total Items',
+                          style: GoogleFonts.robotoSlab(fontSize: 16),
+                        ),
+                        Text(
+                          '${order.items.length}',
+                          style: GoogleFonts.robotoSlab(fontSize: 16),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
                           'Total Amount',
                           style: GoogleFonts.marcellus(
                             fontSize: 18,
@@ -512,7 +558,6 @@ class OrderDetailPage extends StatelessWidget {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
-                      // TODO: Implement cancel order functionality
                       showDialog(
                         context: context,
                         builder: (context) => AlertDialog(
@@ -533,11 +578,11 @@ class OrderDetailPage extends StatelessWidget {
                               ),
                             ),
                             TextButton(
-                              onPressed: () async{
+                              onPressed: () async {
+                                // Update to use CartOrderModel's updateOrderStatus method
                                 await FirestoreService().updateOrderStatus(order.id!, OrderStatus.CANCELLED);
                                 Navigator.pop(context);
                                 Navigator.pop(context);
-                                // TODO: Implement cancel order logic
                               },
                               child: Text(
                                 'Yes, Cancel',
@@ -564,37 +609,7 @@ class OrderDetailPage extends StatelessWidget {
                     ),
                   ),
                 ),
-              ] else if (order.status == OrderStatus.DELIVERED) ...[
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () async{
-                      await FirestoreService().addOrder(FirebaseAuth.instance.currentUser!.uid, order);
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('The reorder has been placed successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      backgroundColor: Colors.green.shade700,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: Text(
-                      'Reorder',
-                      style: GoogleFonts.marcellus(
-                        fontSize: 16,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              ] 
             ],
           ),
         ),

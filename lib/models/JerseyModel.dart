@@ -29,6 +29,7 @@ class JerseyModel {
 
   Map<String, dynamic> toJson() {
     return {
+      'jerseyId': jerseyId,
       'jerseyTitle': jerseyTitle,
       'jerseyDescription': jerseyDescription,
       'jerseyImage': jerseyImage,
@@ -52,6 +53,7 @@ class JerseyModel {
   // toMap function
   Map<String, dynamic> toMap() {
     return {
+      'jerseyId': jerseyId,
       'jerseyTitle': jerseyTitle,
       'jerseyDescription': jerseyDescription,
       'jerseyImage': jerseyImage,

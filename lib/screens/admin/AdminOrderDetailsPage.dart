@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:jersey_ecommerce/enum/OrderStatus.dart';
 import 'package:jersey_ecommerce/enum/PaymentStatus.dart';
-import 'package:jersey_ecommerce/models/OrderModel.dart';
+import 'package:jersey_ecommerce/models/CartOrderModel.dart';
 
 class AdminOrderDetailsPage extends StatefulWidget {
-  final OrderModel order;
+  final CartOrderModel order;
 
   const AdminOrderDetailsPage({Key? key, required this.order})
     : super(key: key);
@@ -15,7 +15,7 @@ class AdminOrderDetailsPage extends StatefulWidget {
 }
 
 class _AdminOrderDetailsPageState extends State<AdminOrderDetailsPage> {
-  late OrderModel order;
+  late CartOrderModel order;
   bool _isUpdating = false;
 
   @override
@@ -28,7 +28,7 @@ class _AdminOrderDetailsPageState extends State<AdminOrderDetailsPage> {
   Future<void> updateOrderStatus(String orderId, OrderStatus newStatus) async {
     try {
       await FirebaseFirestore.instance.collection('Orders').doc(orderId).update(
-        {'status': newStatus.name},
+        {'status': newStatus.toString()},
       );
     } catch (e) {
       throw Exception('Failed to update order status: $e');
@@ -38,7 +38,7 @@ class _AdminOrderDetailsPageState extends State<AdminOrderDetailsPage> {
   Future<void> updateOrderPaymentStatus(String orderId, PaymentStatus newStatus) async {
     try {
       await FirebaseFirestore.instance.collection('Orders').doc(orderId).update(
-        {'paymentStatus': newStatus.name},
+        {'paymentStatus': newStatus.toString()},
       );
     } catch (e) {
       throw Exception('Failed to update order payment status: $e');
@@ -60,7 +60,7 @@ class _AdminOrderDetailsPageState extends State<AdminOrderDetailsPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Order status updated to ${newStatus.name}'),
+            content: Text('Order status updated to ${newStatus.toString().split('.').last}'),
             backgroundColor: Colors.green,
           ),
         );
@@ -96,7 +96,7 @@ class _AdminOrderDetailsPageState extends State<AdminOrderDetailsPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Payment status updated to ${newStatus.name}'),
+            content: Text('Payment status updated to ${newStatus.toString().split('.').last}'),
             backgroundColor: Colors.green,
           ),
         );
@@ -234,13 +234,16 @@ class _AdminOrderDetailsPageState extends State<AdminOrderDetailsPage> {
               'Order ID: ${order.id ?? 'N/A'}',
               style: TextStyle(fontSize: 14, color: Colors.grey[600]),
             ),
-            if (order.orderDate != null) ...[
-              const SizedBox(height: 4),
-              Text(
-                'Order Date: ${_formatDate(order.orderDate!)}',
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-              ),
-            ],
+            const SizedBox(height: 4),
+            Text(
+              'Order Date: ${_formatDate(order.orderDate)}',
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Total Items: ${order.items.length}',
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            ),
           ],
         ),
       ),
@@ -256,18 +259,12 @@ class _AdminOrderDetailsPageState extends State<AdminOrderDetailsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Jersey Information',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            Text(
+              'Items (${order.items.length})',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            _buildDetailRow('Name', order.jersey.jerseyTitle),
-            _buildDetailRow(
-              'Price',
-              '\$${order.jersey.jerseyPrice.toStringAsFixed(2)}',
-            ),
-            _buildDetailRow('Quantity', '${order.quantity}'),
-            _buildDetailRow('Size', order.selectedSize),
+            ...order.items.map((item) => _buildJerseyItemCard(item)),
             const Divider(height: 20),
             _buildDetailRow(
               'Total Amount',
@@ -276,6 +273,32 @@ class _AdminOrderDetailsPageState extends State<AdminOrderDetailsPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildJerseyItemCard(CartOrderItemModel item) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildDetailRow('Jersey Name', item.jersey.jerseyTitle),
+          _buildDetailRow('Price per Item', '\$${item.itemPrice.toStringAsFixed(2)}'),
+          _buildDetailRow('Quantity', '${item.quantity}'),
+          _buildDetailRow('Size', item.selectedSize),
+          _buildDetailRow(
+            'Item Total',
+            '\$${item.totalPrice.toStringAsFixed(2)}',
+            valueColor: Colors.blue,
+          ),
+        ],
       ),
     );
   }
@@ -295,7 +318,7 @@ class _AdminOrderDetailsPageState extends State<AdminOrderDetailsPage> {
             ),
             const SizedBox(height: 16),
             _buildDetailRow('Name', order.fullname),
-            _buildDetailRow('Phone', order.phoneNUmber),
+            _buildDetailRow('Phone', order.phoneNumber),
             _buildDetailRow('Address', order.address),
             _buildDetailRow('City', order.city),
             _buildDetailRow('Postal Code', order.postalCode),
@@ -329,10 +352,10 @@ class _AdminOrderDetailsPageState extends State<AdminOrderDetailsPage> {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: (order.paymentStatus.name == "PAID" ? Colors.green : Colors.red).withOpacity(0.1),
+                      color: (order.paymentStatus.toString().split('.').last == "PAID" ? Colors.green : Colors.red).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: (order.paymentStatus.name == "PAID" ? Colors.green : Colors.red).withOpacity(0.3),
+                        color: (order.paymentStatus.toString().split('.').last == "PAID" ? Colors.green : Colors.red).withOpacity(0.3),
                         width: 1,
                       ),
                     ),
@@ -343,15 +366,15 @@ class _AdminOrderDetailsPageState extends State<AdminOrderDetailsPage> {
                           width: 6,
                           height: 6,
                           decoration: BoxDecoration(
-                            color: order.paymentStatus.name == "PAID" ? Colors.green : Colors.red,
+                            color: order.paymentStatus.toString().split('.').last == "PAID" ? Colors.green : Colors.red,
                             shape: BoxShape.circle,
                           ),
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          order.paymentStatus.name,
+                          order.paymentStatus.toString().split('.').last,
                           style: TextStyle(
-                            color: order.paymentStatus.name == "PAID" ? Colors.green : Colors.red,
+                            color: order.paymentStatus.toString().split('.').last == "PAID" ? Colors.green : Colors.red,
                             fontWeight: FontWeight.bold,
                             fontSize: 10,
                           ),
@@ -360,7 +383,7 @@ class _AdminOrderDetailsPageState extends State<AdminOrderDetailsPage> {
                         Icon(
                           Icons.edit,
                           size: 12,
-                          color: order.paymentStatus.name == "PAID" ? Colors.green : Colors.red,
+                          color: order.paymentStatus.toString().split('.').last == "PAID" ? Colors.green : Colors.red,
                         ),
                       ],
                     ),
@@ -377,14 +400,28 @@ class _AdminOrderDetailsPageState extends State<AdminOrderDetailsPage> {
               'Amount',
               '\$${order.totalAmount.toStringAsFixed(2)}',
             ),
-            _buildDetailRow('Status', order.paymentStatus.name, valueColor: order.paymentStatus.name == "PAID" ? Colors.green : Colors.red),
+            _buildDetailRow(
+              'Status', 
+              order.paymentStatus.toString().split('.').last.toUpperCase(), 
+              valueColor: order.paymentStatus.toString().split('.').last == "PAID" ? Colors.green : Colors.red
+            ),
+            if (order.khaltiTransactionId != null) ...[
+              const SizedBox(height: 8),
+              _buildDetailRow('Khalti Transaction ID', order.khaltiTransactionId!),
+            ],
+            if (order.khaltiRefId != null) ...[
+              const SizedBox(height: 4),
+              _buildDetailRow('Khalti Ref ID', order.khaltiRefId!),
+            ],
+            if (order.paymentDate != null) ...[
+              const SizedBox(height: 4),
+              _buildDetailRow('Payment Date', _formatDate(order.paymentDate!)),
+            ],
           ],
         ),
       ),
     );
   }
-
-
 
   Widget _buildDetailRow(
     String label,
@@ -425,7 +462,7 @@ class _AdminOrderDetailsPageState extends State<AdminOrderDetailsPage> {
   }
 
   // Order Status update dialog
-  void _showStatusUpdateDialog(OrderModel order) {
+  void _showStatusUpdateDialog(CartOrderModel order) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -465,7 +502,7 @@ class _AdminOrderDetailsPageState extends State<AdminOrderDetailsPage> {
   }
 
   // Payment Status update dialog
-  void _showPaymentStatusUpdateDialog(OrderModel order) {
+  void _showPaymentStatusUpdateDialog(CartOrderModel order) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -479,7 +516,7 @@ class _AdminOrderDetailsPageState extends State<AdminOrderDetailsPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Current Status: ${order.paymentStatus.name.toUpperCase()}',
+                'Current Status: ${order.paymentStatus.toString().split('.').last.toUpperCase()}',
                 style: TextStyle(color: Colors.grey[600], fontSize: 14),
               ),
               const SizedBox(height: 16),
@@ -505,7 +542,7 @@ class _AdminOrderDetailsPageState extends State<AdminOrderDetailsPage> {
   }
 
   // Status option widget
-  Widget _buildStatusOption(OrderModel order, OrderStatus status) {
+  Widget _buildStatusOption(CartOrderModel order, OrderStatus status) {
     final isCurrentStatus = order.status == status;
 
     return Container(
@@ -546,9 +583,9 @@ class _AdminOrderDetailsPageState extends State<AdminOrderDetailsPage> {
   }
 
   // Payment Status option widget
-  Widget _buildPaymentStatusOption(OrderModel order, PaymentStatus status) {
+  Widget _buildPaymentStatusOption(CartOrderModel order, PaymentStatus status) {
     final isCurrentStatus = order.paymentStatus == status;
-    final statusColor = status.name == "PAID" ? Colors.green : Colors.red;
+    final statusColor = status.toString().split('.').last == "PAID" ? Colors.green : Colors.red;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -569,7 +606,7 @@ class _AdminOrderDetailsPageState extends State<AdminOrderDetailsPage> {
           ),
         ),
         title: Text(
-          status.name.toUpperCase(),
+          status.toString().split('.').last.toUpperCase(),
           style: TextStyle(
             fontWeight: isCurrentStatus ? FontWeight.bold : FontWeight.normal,
             color: isCurrentStatus ? statusColor : null,

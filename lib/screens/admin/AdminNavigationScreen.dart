@@ -6,7 +6,6 @@ import 'package:jersey_ecommerce/screens/OrderListPage.dart';
 import 'package:jersey_ecommerce/screens/SearchPage.dart';
 import 'package:jersey_ecommerce/screens/admin/AddJerseyScreen.dart';
 import 'package:jersey_ecommerce/screens/admin/AdminDashboard.dart';
-import 'package:jersey_ecommerce/screens/admin/AdminSettingsScreen.dart';
 import 'package:jersey_ecommerce/screens/admin/ViewJerseyScreen.dart';
 import 'package:jersey_ecommerce/screens/admin/ViewOrdersScreen.dart';
 
@@ -23,14 +22,12 @@ class _AdminNavigationScreenState extends State<AdminNavigationScreen>
     AdminDashboardPage(),
     ViewJerseysPage(),
     ViewOrdersPage(),
-    AdminSettingsScreen(),
   ];
 
   final List<IconData> bottomBarIcons = [
     Icons.home,
     Icons.checkroom,
     Icons.inventory,
-    Icons.settings,
   ];
 
 

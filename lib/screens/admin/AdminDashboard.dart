@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:jersey_ecommerce/models/OrderModel.dart';
+import 'package:jersey_ecommerce/models/CartOrderModel.dart';
 import 'package:jersey_ecommerce/screens/admin/JerseyDetailsPage.dart';
+import 'package:jersey_ecommerce/service/FirebaseAuthService.dart';
 import 'package:jersey_ecommerce/service/FirestoreService.dart';
 
 class AdminDashboardPage extends StatefulWidget {
@@ -12,20 +13,7 @@ class AdminDashboardPage extends StatefulWidget {
 }
 
 class _AdminDashboardPageState extends State<AdminDashboardPage> {
-  final List<String> brands = [
-    'Adidas',
-    'Nike',
-    'Puma',
-    'New Balance',
-    'Under Armour',
-  ];
-  final List<Color> brandColors = [
-    const Color(0xff0F4C75),
-    const Color(0xff3282B8),
-    const Color(0xff015888),
-    const Color(0xff0F4C75),
-    const Color(0xff3282B8),
-  ];
+
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +30,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               const SizedBox(height: 20),
               _buildStatsCards(),
               const SizedBox(height: 20),
-
               _buildRecentOrdersSection(),
               const SizedBox(height: 20),
               _buildTopProductsSection(),
@@ -66,10 +53,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         ),
       ),
       actions: [
-        IconButton(
-          icon: const Icon(Icons.notifications_outlined, color: Colors.black87),
-          onPressed: () {},
-        ),
+        
         Padding(
           padding: const EdgeInsets.all(8.0),
           child: CircleAvatar(
@@ -84,6 +68,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             ),
           ),
         ),
+        IconButton(onPressed: () async{
+              await AuthFirebaseService().logout();
+            }, icon: Icon(Icons.logout, color: Colors.red[700],)),
       ],
     );
   }
@@ -262,7 +249,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           ),
         ],
       ),
-      child: StreamBuilder<List<OrderModel>>(
+      child: StreamBuilder<List<CartOrderModel>>(
         stream: FirestoreService().getOrdersStream(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -299,12 +286,17 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 
-  Widget _buildOrderItem(OrderModel order) {
+  Widget _buildOrderItem(CartOrderModel order) {
     final statusColors = {
       'DELIVERED': Colors.green,
       'PENDING': Colors.orange,
       'SHIPPED': const Color(0xff3282B8),
+      'CANCELLED': Colors.red,
     };
+
+    // Get the first item's jersey title for display
+    final firstItem = order.items.isNotEmpty ? order.items.first : null;
+    final jerseyTitle = firstItem?.jersey.jerseyTitle ?? 'Unknown Jersey';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -321,7 +313,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  order.jersey.jerseyTitle,
+                  jerseyTitle,
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
@@ -331,27 +323,32 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                   order.fullname,
                   style: TextStyle(color: Colors.grey[600], fontSize: 12),
                 ),
+                if (order.items.length > 1)
+                  Text(
+                    '+ ${order.items.length - 1} more items',
+                    style: TextStyle(color: Colors.grey[500], fontSize: 10),
+                  ),
               ],
             ),
           ),
           Expanded(
             child: Text(
-              'Rs. ${order.totalAmount}',
+              'Rs. ${order.totalAmount.toStringAsFixed(2)}',
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color:
-                  statusColors[order.status.name]?.withOpacity(0.1) ??
+              color: statusColors[order.status.toString().split('.').last]
+                      ?.withOpacity(0.1) ??
                   Colors.grey.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
-              order.status.name,
+              order.status.toString().split('.').last,
               style: TextStyle(
-                color: statusColors[order.status.name] ?? Colors.grey,
+                color: statusColors[order.status.toString().split('.').last] ??
+                    Colors.grey,
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
               ),

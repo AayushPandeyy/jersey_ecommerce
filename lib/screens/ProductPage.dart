@@ -8,6 +8,7 @@ import 'package:jersey_ecommerce/service/FirestoreService.dart';
 import 'package:jersey_ecommerce/utlitlies/Loaders.dart';
 import 'package:jersey_ecommerce/widgets/MobileImageViewer.dart';
 import 'package:jersey_ecommerce/widgets/SizeSelector.dart';
+import 'package:uuid/uuid.dart';
 
 class ProductPage extends StatefulWidget {
   final JerseyModel model;
@@ -34,7 +35,7 @@ class _ProductPageState extends State<ProductPage> {
   }
 
   void buyNow(JerseyModel model, String size, int quantity) async {
-    Navigator.push(context, MaterialPageRoute(builder: (context)=> CheckoutPage(model: model, selectedSize: size, quantity: quantity)));
+    Navigator.push(context, MaterialPageRoute(builder: (context)=> CheckoutPage(cartItems: [CartItemModel(id: Uuid().v4(), jersey: widget.model, quantity: quantity, selectedSize: selectedSize!)],)));
     
   }
 
@@ -67,10 +68,7 @@ Future<void> addToCartHandler() async {
   try {
     final cartItem = CartItemModel(
       id: '', 
-      jerseyId: widget.model.jerseyId,
-      jerseyTitle: widget.model.jerseyTitle,
-      jerseyImage: widget.model.jerseyImage[0], 
-      jerseyPrice: widget.model.jerseyPrice,
+      jersey: widget.model,
       selectedSize: selectedSize!,
       quantity: quantity,
     );

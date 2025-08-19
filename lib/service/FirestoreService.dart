@@ -9,6 +9,7 @@ import 'package:jersey_ecommerce/enum/OrderStatus.dart';
 import 'package:jersey_ecommerce/enum/PaymentMethod.dart';
 import 'package:jersey_ecommerce/enum/PaymentStatus.dart';
 import 'package:jersey_ecommerce/models/CartModel.dart';
+import 'package:jersey_ecommerce/models/CartOrderModel.dart';
 import 'package:jersey_ecommerce/models/OrderModel.dart';
 import 'package:uuid/uuid.dart';
 import '../models/JerseyModel.dart';
@@ -54,6 +55,7 @@ class FirestoreService {
       "email": email,
       "fullname": fullname,
       "phoneNumber": phoneNumber,
+      "role":"customer"
     });
   }
 
@@ -105,25 +107,20 @@ Future<void> addJersey(JerseyModel jersey, List<File?> imageFiles) async {
   }
 
   String _extractPublicIdFromUrl(String url) {
-    // Example URL: https://res.cloudinary.com/cloud_name/image/upload/v1234567890/jerseys/jersey_name_0.jpg
-    // Extract: jerseys/jersey_name_0
+
     final uri = Uri.parse(url);
     final pathSegments = uri.pathSegments;
     
-    // Find the index after 'upload'
     final uploadIndex = pathSegments.indexOf('upload');
     if (uploadIndex != -1 && uploadIndex + 2 < pathSegments.length) {
-      // Skip 'upload' and version (v1234567890)
       final publicIdParts = pathSegments.sublist(uploadIndex + 2);
       final publicId = publicIdParts.join('/');
-      // Remove file extension
       return publicId.replaceAll(RegExp(r'\.[^.]*), '''),"");
     }
     
     return '';
   }
 
-  // Helper method to delete image from Cloudinary
   Future<void> _deleteFromCloudinary(String imageUrl) async {
     try {
       const String cloudName = 'dn9pqt2zt';
@@ -243,156 +240,316 @@ Future updateJersey(String id, JerseyModel updatedJersey) async {
         });
   }
 
-  Future<void> addOrder(String userId, OrderModel order) async {
-    await FirebaseFirestore.instance.collection('Orders').add({
-      'userId': userId,
-      'jersey': {
-        'jerseyTitle': order.jersey.jerseyTitle,
-        'jerseyDescription': order.jersey.jerseyDescription,
-        'jerseyImage': order.jersey.jerseyImage,
-        'jerseyPrice': order.jersey.jerseyPrice,
-        'rating': order.jersey.rating,
-        // Add other jersey fields if needed
-      },
-      'selectedSize': order.selectedSize, // Renamed to match getter in fetch
-      'quantity': order.quantity,
-      'fullname': order.fullname,
-      'phoneNumber': order.phoneNUmber, // Fixed typo: phoneNUmber → phoneNumber
-      'address': order.address,
-      'city': order.city,
-      'postalCode': order.postalCode,
-      'status': order.status.name,
-      'paymentMethod': order.paymentMethod.name,
-      'totalAmount': order.totalAmount,
-      'timestamp': FieldValue.serverTimestamp(),
-      'orderDate': order.orderDate.toIso8601String(),
-      'paymentStatus': order.paymentStatus.name,
-    });
+
+
+Future<CartOrderModel> createOrder({
+  required String userId,
+  required List<CartItemModel> cartItems,
+  required String fullname,
+  required String phoneNumber,
+  required String address,
+  required String city,
+  required String postalCode,
+  required PaymentMethod paymentMethod,
+  OrderStatus status = OrderStatus.PENDING,
+  PaymentStatus paymentStatus = PaymentStatus.PENDING,
+  // Stripe parameters
+  String? stripePaymentIntentId,
+  String? stripeTransactionId,
+  String? stripeCustomerId,
+  // Khalti parameters (for backward compatibility)
+  String? khaltiTransactionId,
+  String? khaltiProductId,
+  String? khaltiRefId,
+}) async {
+  try {
+    // Convert cart items to order items
+    List<CartOrderItemModel> orderItems = cartItems
+        .map((cartItem) => CartOrderItemModel.fromCartItem(cartItem))
+        .toList();
+
+    // Calculate subtotal from items
+    double subtotal = orderItems.fold(
+      0.0,
+      (sum, item) => sum + item.totalPrice,
+    );
+
+    // Add delivery fee
+    double deliveryFee = 150.0;
+    double totalAmount = subtotal + deliveryFee;
+
+    // Get a reference to create the document with auto-generated ID
+    DocumentReference orderRef = FirebaseFirestore.instance.collection('Orders').doc();
+
+    // Create the order model
+    CartOrderModel order = CartOrderModel(
+      id: orderRef.id,
+      userId: userId,
+      status: status,
+      items: orderItems,
+      fullname: fullname,
+      phoneNumber: phoneNumber,
+      address: address,
+      city: city,
+      postalCode: postalCode,
+      totalAmount: totalAmount,
+      paymentMethod: paymentMethod,
+      orderDate: DateTime.now(),
+      paymentStatus: paymentStatus,
+      // Stripe parameters
+      stripePaymentIntentId: stripePaymentIntentId,
+      stripeTransactionId: stripeTransactionId,
+      stripeCustomerId: stripeCustomerId,
+      // Khalti parameters (kept for backward compatibility)
+      khaltiTransactionId: khaltiTransactionId,
+      khaltiProductId: khaltiProductId,
+      khaltiRefId: khaltiRefId,
+      paymentDate: paymentStatus == PaymentStatus.PAID 
+          ? DateTime.now() 
+          : null,
+    );
+
+    // Save to Firestore
+    await orderRef.set(order.toMap());
+
+    print('Order created successfully with ID: ${order.id}');
+    return order;
+
+  } catch (e) {
+    print('Error creating order: $e');
+    rethrow;
   }
+}
+// Fixed getUserOrders method
+Stream<List<CartOrderModel>> getUserOrders(String userId) {
+  return FirebaseFirestore.instance
+      .collection('Orders')
+      .where('userId', isEqualTo: userId)
+      .orderBy('orderDate', descending: true) // Fixed: changed from 'timestamp' to 'orderDate'
+      .snapshots()
+      .map((querySnapshot) {
+        return querySnapshot.docs.map((doc) {
+          final data = doc.data();
 
-  Stream<List<OrderModel>> getUserOrders(String userId) {
-    return FirebaseFirestore.instance
-        .collection('Orders')
-        .where('userId', isEqualTo: userId)
-        .orderBy('timestamp', descending: true)
-        .snapshots()
-        .map((querySnapshot) {
-          return querySnapshot.docs.map((doc) {
-            final data = doc.data();
+          // Check if this is legacy format (single jersey) or new format (items array)
+          final items = data['items'] as List<dynamic>?;
+          List<CartOrderItemModel> orderItems;
 
+          if (items != null && items.isNotEmpty) {
+            // New format: items array exists
+            orderItems = items.map((item) {
+              final jerseyModel = JerseyModel(
+                jerseyId: item['jersey']['jerseyId'] ?? item['jerseyId'] ?? '',
+                jerseyTitle: item['jersey']['jerseyTitle'] ?? '',
+                jerseyDescription: item['jersey']['jerseyDescription'] ?? '',
+                jerseyPrice: (item['jersey']['jerseyPrice'] ?? 0).toDouble(),
+                jerseyImage: List<String>.from(item['jersey']['jerseyImage'] ?? []),
+                rating: (item['jersey']['rating'] ?? 0.0).toDouble(),
+              );
+
+              return CartOrderItemModel(
+                jerseyId: item['jerseyId'] ?? item['jersey']['jerseyId'] ?? '',
+                jersey: jerseyModel,
+                quantity: item['quantity'] ?? 1,
+                selectedSize: item['selectedSize'] ?? item['size'] ?? 'M',
+                itemPrice: (item['itemPrice'] ?? item['jersey']['jerseyPrice'] ?? 0).toDouble(),
+                totalPrice: (item['totalPrice'] ?? (item['quantity'] ?? 1) * (item['itemPrice'] ?? item['jersey']['jerseyPrice'] ?? 0)).toDouble(),
+              );
+            }).toList();
+          } else {
+            // Legacy format: single jersey data
             final jerseyModel = JerseyModel(
-              jerseyId:
-                  data['jersey']['jerseyId'] ??
-                  doc.id, // Use doc.id if jerseyId is not provided
+              jerseyId: data['jersey']['jerseyId'] ?? doc.id,
               jerseyTitle: data['jersey']['jerseyTitle'] ?? '',
               jerseyDescription: data['jersey']['jerseyDescription'] ?? '',
               jerseyPrice: (data['jersey']['jerseyPrice'] ?? 0).toDouble(),
-              jerseyImage: List<String>.from(
-                data['jersey']['jerseyImage'] ?? [],
-              ),
+              jerseyImage: List<String>.from(data['jersey']['jerseyImage'] ?? []),
               rating: (data['jersey']['rating'] ?? 0.0).toDouble(),
             );
 
-            final status = OrderStatus.values.firstWhere(
-              (e) =>
-                  e.name.toLowerCase() == (data['status'] ?? '').toLowerCase(),
-              orElse: () => OrderStatus.PENDING,
-            );
+            final quantity = data['quantity'] ?? 1;
+            final itemPrice = jerseyModel.jerseyPrice;
+            
+            orderItems = [
+              CartOrderItemModel(
+                jerseyId: jerseyModel.jerseyId,
+                jersey: jerseyModel,
+                quantity: quantity,
+                selectedSize: data['selectedSize'] ?? data['size'] ?? 'M', // Fixed: added selectedSize fallback
+                itemPrice: itemPrice,
+                totalPrice: itemPrice * quantity,
+              )
+            ];
+          }
 
-            final paymentMethod = PaymentMethod.values.firstWhere(
-              (e) =>
-                  e.name.toLowerCase() ==
-                  (data['paymentMethod'] ?? '').toLowerCase(),
-              orElse: () => PaymentMethod.CASH_ON_DELIVERY,
-            );
+          // Fixed: enum parsing to handle both string formats
+          final status = OrderStatus.values.firstWhere(
+            (e) => e.toString().split('.').last.toLowerCase() == (data['status'] ?? '').toString().split('.').last.toLowerCase(),
+            orElse: () => OrderStatus.PENDING,
+          );
 
-            final paymentStatus = PaymentStatus.values.firstWhere(
-              (e) =>
-                  e.name.toLowerCase() ==
-                  (data['paymentStatus'] ?? '').toLowerCase(),
-              orElse: () => PaymentStatus.PENDING,
-            );
+          final paymentMethod = PaymentMethod.values.firstWhere(
+            (e) => e.toString().split('.').last.toLowerCase() == (data['paymentMethod'] ?? '').toString().split('.').last.toLowerCase(),
+            orElse: () => PaymentMethod.CASH_ON_DELIVERY,
+          );
 
-            return OrderModel(
-              id: doc.id,
-              jersey: jerseyModel,
-              quantity: data['quantity'] ?? 1,
-              selectedSize: data['size'] ?? 'M',
-              fullname: data['fullname'] ?? '',
-              phoneNUmber: data['phoneNumber'] ?? '',
-              address: data['address'] ?? '',
-              city: data['city'] ?? '',
-              postalCode: data['postalCode'] ?? '',
-              totalAmount: (data['totalAmount'] ?? 0).toDouble(),
-              status: status,
-              paymentMethod: paymentMethod,
-              orderDate: DateTime.parse(data['orderDate']),
-              paymentStatus: paymentStatus
-            );
-          }).toList();
-        });
-  }
+          final paymentStatus = PaymentStatus.values.firstWhere(
+            (e) => e.toString().split('.').last.toLowerCase() == (data['paymentStatus'] ?? '').toString().split('.').last.toLowerCase(),
+            orElse: () => PaymentStatus.PENDING,
+          );
 
-  Stream<List<OrderModel>> getOrdersStream() {
+          // Fixed: improved date parsing
+          DateTime orderDate;
+          if (data['orderDate'] is Timestamp) {
+            orderDate = (data['orderDate'] as Timestamp).toDate();
+          } else if (data['orderDate'] is String) {
+            try {
+              orderDate = DateTime.parse(data['orderDate']);
+            } catch (e) {
+              orderDate = DateTime.now();
+            }
+          } else {
+            orderDate = DateTime.now();
+          }
+
+          return CartOrderModel(
+            id: doc.id,
+            userId: data['userId'] ?? userId,
+            status: status,
+            items: orderItems,
+            fullname: data['fullname'] ?? '',
+            phoneNumber: data['phoneNumber'] ?? '',
+            address: data['address'] ?? '',
+            city: data['city'] ?? '',
+            postalCode: data['postalCode'] ?? '',
+            totalAmount: (data['totalAmount'] ?? 0).toDouble(),
+            paymentMethod: paymentMethod,
+            orderDate: orderDate,
+            paymentStatus: paymentStatus,
+            khaltiTransactionId: data['khaltiTransactionId'],
+            khaltiProductId: data['khaltiProductId'],
+            khaltiRefId: data['khaltiRefId'],
+            paymentDate: data['paymentDate'] != null 
+                ? (data['paymentDate'] as Timestamp).toDate()
+                : null,
+          );
+        }).toList();
+      });
+}
+
+  Stream<List<CartOrderModel>> getOrdersStream() {
     return FirebaseFirestore.instance
-        .collection('Orders')
-        .orderBy('timestamp', descending: true)
-        .snapshots()
-        .map((querySnapshot) {
-          return querySnapshot.docs.map((doc) {
-            final data = doc.data();
+      .collection('Orders')
+      .orderBy('orderDate', descending: true) // Fixed: changed from 'timestamp' to 'orderDate'
+      .snapshots()
+      .map((querySnapshot) {
+        return querySnapshot.docs.map((doc) {
+          final data = doc.data();
 
+          // Check if this is legacy format (single jersey) or new format (items array)
+          final items = data['items'] as List<dynamic>?;
+          List<CartOrderItemModel> orderItems;
+
+          if (items != null && items.isNotEmpty) {
+            // New format: items array exists
+            orderItems = items.map((item) {
+              final jerseyModel = JerseyModel(
+                jerseyId: item['jersey']['jerseyId'] ?? item['jerseyId'] ?? '',
+                jerseyTitle: item['jersey']['jerseyTitle'] ?? '',
+                jerseyDescription: item['jersey']['jerseyDescription'] ?? '',
+                jerseyPrice: (item['jersey']['jerseyPrice'] ?? 0).toDouble(),
+                jerseyImage: List<String>.from(item['jersey']['jerseyImage'] ?? []),
+                rating: (item['jersey']['rating'] ?? 0.0).toDouble(),
+              );
+
+              return CartOrderItemModel(
+                jerseyId: item['jerseyId'] ?? item['jersey']['jerseyId'] ?? '',
+                jersey: jerseyModel,
+                quantity: item['quantity'] ?? 1,
+                selectedSize: item['selectedSize'] ?? item['size'] ?? 'M',
+                itemPrice: (item['itemPrice'] ?? item['jersey']['jerseyPrice'] ?? 0).toDouble(),
+                totalPrice: (item['totalPrice'] ?? (item['quantity'] ?? 1) * (item['itemPrice'] ?? item['jersey']['jerseyPrice'] ?? 0)).toDouble(),
+              );
+            }).toList();
+          } else {
+            // Legacy format: single jersey data
             final jerseyModel = JerseyModel(
-              jerseyId:
-                  data['jersey']['jerseyId'] ??
-                  doc.id, // Use doc.id if jerseyId is not provided
+              jerseyId: data['jersey']['jerseyId'] ?? doc.id,
               jerseyTitle: data['jersey']['jerseyTitle'] ?? '',
               jerseyDescription: data['jersey']['jerseyDescription'] ?? '',
               jerseyPrice: (data['jersey']['jerseyPrice'] ?? 0).toDouble(),
-              jerseyImage: List<String>.from(
-                data['jersey']['jerseyImage'] ?? [],
-              ),
+              jerseyImage: List<String>.from(data['jersey']['jerseyImage'] ?? []),
               rating: (data['jersey']['rating'] ?? 0.0).toDouble(),
             );
 
-            final status = OrderStatus.values.firstWhere(
-              (e) =>
-                  e.name.toLowerCase() == (data['status'] ?? '').toLowerCase(),
-              orElse: () => OrderStatus.PENDING,
-            );
+            final quantity = data['quantity'] ?? 1;
+            final itemPrice = jerseyModel.jerseyPrice;
+            
+            orderItems = [
+              CartOrderItemModel(
+                jerseyId: jerseyModel.jerseyId,
+                jersey: jerseyModel,
+                quantity: quantity,
+                selectedSize: data['selectedSize'] ?? data['size'] ?? 'M', // Fixed: added selectedSize fallback
+                itemPrice: itemPrice,
+                totalPrice: itemPrice * quantity,
+              )
+            ];
+          }
 
-            final paymentMethod = PaymentMethod.values.firstWhere(
-              (e) =>
-                  e.name.toLowerCase() ==
-                  (data['paymentMethod'] ?? '').toLowerCase(),
-              orElse: () => PaymentMethod.CASH_ON_DELIVERY,
-            );
+          // Fixed: enum parsing to handle both string formats
+          final status = OrderStatus.values.firstWhere(
+            (e) => e.toString().split('.').last.toLowerCase() == (data['status'] ?? '').toString().split('.').last.toLowerCase(),
+            orElse: () => OrderStatus.PENDING,
+          );
 
-            final paymentStatus = PaymentStatus.values.firstWhere(
-              (e) =>
-                  e.name.toLowerCase() ==
-                  (data['paymentStatus'] ?? '').toLowerCase(),
-              orElse: () => PaymentStatus.PENDING,
-            );
+          final paymentMethod = PaymentMethod.values.firstWhere(
+            (e) => e.toString().split('.').last.toLowerCase() == (data['paymentMethod'] ?? '').toString().split('.').last.toLowerCase(),
+            orElse: () => PaymentMethod.CASH_ON_DELIVERY,
+          );
 
-            return OrderModel(
-              id: doc.id,
-              jersey: jerseyModel,
-              quantity: data['quantity'] ?? 1,
-              selectedSize: data['size'] ?? 'M',
-              fullname: data['fullname'] ?? '',
-              phoneNUmber: data['phoneNumber'] ?? '',
-              address: data['address'] ?? '',
-              city: data['city'] ?? '',
-              postalCode: data['postalCode'] ?? '',
-              totalAmount: (data['totalAmount'] ?? 0).toDouble(),
-              status: status,
-              paymentMethod: paymentMethod,
-              orderDate: DateTime.parse(data['orderDate']),
-              paymentStatus: paymentStatus,
-            );
-          }).toList();
-        });
+          final paymentStatus = PaymentStatus.values.firstWhere(
+            (e) => e.toString().split('.').last.toLowerCase() == (data['paymentStatus'] ?? '').toString().split('.').last.toLowerCase(),
+            orElse: () => PaymentStatus.PENDING,
+          );
+
+          // Fixed: improved date parsing
+          DateTime orderDate;
+          if (data['orderDate'] is Timestamp) {
+            orderDate = (data['orderDate'] as Timestamp).toDate();
+          } else if (data['orderDate'] is String) {
+            try {
+              orderDate = DateTime.parse(data['orderDate']);
+            } catch (e) {
+              orderDate = DateTime.now();
+            }
+          } else {
+            orderDate = DateTime.now();
+          }
+
+          return CartOrderModel(
+            id: doc.id,
+            userId: data['userId'] ?? FirebaseAuth.instance.currentUser?.uid ?? '',
+            status: status,
+            items: orderItems,
+            fullname: data['fullname'] ?? '',
+            phoneNumber: data['phoneNumber'] ?? '',
+            address: data['address'] ?? '',
+            city: data['city'] ?? '',
+            postalCode: data['postalCode'] ?? '',
+            totalAmount: (data['totalAmount'] ?? 0).toDouble(),
+            paymentMethod: paymentMethod,
+            orderDate: orderDate,
+            paymentStatus: paymentStatus,
+            khaltiTransactionId: data['khaltiTransactionId'],
+            khaltiProductId: data['khaltiProductId'],
+            khaltiRefId: data['khaltiRefId'],
+            paymentDate: data['paymentDate'] != null 
+                ? (data['paymentDate'] as Timestamp).toDate()
+                : null,
+          );
+        }).toList();
+      });
   }
 
   Future<void> updateOrderStatus(String orderId, OrderStatus newStatus) async {
@@ -536,18 +693,15 @@ Future updateJersey(String id, JerseyModel updatedJersey) async {
     });
   }
 
-  Stream<List<CartItemModel>> getCartItems(String userId) {
-    return FirebaseFirestore.instance
-        .collection('Cart')
-        .doc(userId)
-        .collection('CartItems')
-        .snapshots()
-        .map((snapshot) {
-          return snapshot.docs.map((doc) {
-            return CartItemModel.fromMap(doc.data());
-          }).toList();
-        });
-  }
+Stream<List<CartItemModel>> getCartItems(String userId) {
+  return FirebaseFirestore.instance
+      .collection('Cart')
+      .doc(userId)
+      .collection('CartItems')
+      .snapshots()
+      .map((snapshot) =>
+          snapshot.docs.map((doc) => CartItemModel.fromMap(doc.data())).toList());
+}
 
   Future<void> addToCart(String userId, CartItemModel cartItem) async {
   final cartRef = FirebaseFirestore.instance
@@ -557,7 +711,7 @@ Future updateJersey(String id, JerseyModel updatedJersey) async {
 
   // Check if the item already exists (same jerseyId + size)
   final existing = await cartRef
-      .where('jerseyId', isEqualTo: cartItem.jerseyId)
+      .where('jerseyId', isEqualTo: cartItem.jersey.jerseyId)
       .where('selectedSize', isEqualTo: cartItem.selectedSize)
       .get();
 

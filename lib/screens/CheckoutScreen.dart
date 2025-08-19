@@ -4,23 +4,18 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:jersey_ecommerce/enum/OrderStatus.dart';
 import 'package:jersey_ecommerce/enum/PaymentMethod.dart';
 import 'package:jersey_ecommerce/enum/PaymentStatus.dart';
-import 'package:jersey_ecommerce/models/JerseyModel.dart';
-import 'package:jersey_ecommerce/models/OrderModel.dart';
+import 'package:jersey_ecommerce/models/CartModel.dart';
+import 'package:jersey_ecommerce/models/CartOrderModel.dart';
 import 'package:jersey_ecommerce/service/FirestoreService.dart';
 import 'package:jersey_ecommerce/utlitlies/Loaders.dart';
-import 'package:khalti_flutter/khalti_flutter.dart';
+import 'package:flutter_stripe/flutter_stripe.dart' hide PaymentMethod;
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class CheckoutPage extends StatefulWidget {
-  final JerseyModel model;
-  final String selectedSize;
-  final int quantity;
+  final List<CartItemModel> cartItems;
 
-  const CheckoutPage({
-    super.key,
-    required this.model,
-    required this.selectedSize,
-    required this.quantity,
-  });
+  const CheckoutPage({super.key, required this.cartItems});
 
   @override
   State<CheckoutPage> createState() => _CheckoutPageState();
@@ -40,11 +35,31 @@ class _CheckoutPageState extends State<CheckoutPage> {
   String selectedPaymentMethod = 'Cash on Delivery';
   bool isLoading = false;
 
-  double get subtotal => widget.model.jerseyPrice * widget.quantity;
+  // Your Stripe configuration
+  static const String stripePublishableKey =
+      'pk_test_51RxlabIdq3n9dEVZ5Xyo2JxpFS0zulswMAaUTXjck0Sro3GkDPDDZ7Iro93bUawnIOzw17KKnRz9dk9jgOz6nEIA006kAwxmi5';
+  static const String stripeSecretKey =
+      'sk_test_51RxlabIdq3n9dEVZZ3U3SaU3jEk71n7DXV48ydpPqbhPo4PBlLAaIQIiH9OWNltJucOE4K3fu5YeeszFjhJMlYDY00VcdN7TBZ';
+
+  double get subtotal => widget.cartItems.fold(
+    0.0,
+    (sum, item) => sum + (item.jersey.jerseyPrice * item.quantity),
+  );
+
   double get deliveryFee => 150.0;
   double get total => subtotal + deliveryFee;
 
-  void placeOrder(OrderModel model) async {
+  int get totalItems =>
+      widget.cartItems.fold(0, (sum, item) => sum + item.quantity);
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize Stripe
+    Stripe.publishableKey = stripePublishableKey;
+  }
+
+  void placeOrder() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
@@ -53,16 +68,16 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
     try {
       if (selectedPaymentMethod == 'Online Payment') {
-        // Process Khalti payment
-        await processKhaltiPayment(model);
+        // Process Stripe payment
+        await processStripePayment();
       } else {
         // Process Cash on Delivery
-        await processCODOrder(model);
+        await processCODOrder();
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error placing order: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error placing order: $e')));
     } finally {
       setState(() {
         isLoading = false;
@@ -70,108 +85,99 @@ class _CheckoutPageState extends State<CheckoutPage> {
     }
   }
 
-  Future<void> processKhaltiPayment(OrderModel model) async {
+  Future<void> processStripePayment() async {
     try {
-      // Generate unique product ID
-      String productId = "jersey_${DateTime.now().millisecondsSinceEpoch}";
-      
-      // Configure Khalti payment
-      PaymentConfig config = PaymentConfig(
-        amount: (total * 100).toInt(), // Khalti expects amount in paisa (multiply by 100)
-        productIdentity: productId,
-        productName: widget.model.jerseyTitle,
-        productUrl: '', // Optional
-        additionalData: {
-          'size': widget.selectedSize,
-          'quantity': widget.quantity.toString(),
-          'customer_name': _nameController.text,
-          'customer_phone': _phoneController.text,
-        },
+      // Create product name from cart items
+      String productName = widget.cartItems.length == 1
+          ? widget.cartItems.first.jersey.jerseyTitle
+          : "${widget.cartItems.length} Jerseys";
+
+      // Step 1: Create payment intent on your backend
+      final paymentIntent = await createPaymentIntent(
+        amount: (total * 100).toInt(), // Stripe expects amount in cents
+        currency: 'usd', // Change to your currency
+        description: productName,
       );
 
-      // Launch Khalti payment
-      KhaltiScope.of(context).pay(
-        config: config,
-        preferences: [
-          PaymentPreference.khalti,
-          PaymentPreference.eBanking,
-          PaymentPreference.mobileBanking,
-          PaymentPreference.connectIPS,
-          PaymentPreference.sct,
-        ],
-        onSuccess: (PaymentSuccessModel success) async {
-          // Payment successful
-          print('Khalti Payment Success: ${success.toString()}');
-          
-          OrderModel updatedModel = OrderModel(
-            status: OrderStatus.PENDING,
-            jersey: model.jersey,
-            quantity: model.quantity,
-            selectedSize: model.selectedSize,
-            fullname: model.fullname,
-            phoneNUmber: model.phoneNUmber,
-            address: model.address,
-            city: model.city,
-            postalCode: model.postalCode,
-            totalAmount: model.totalAmount,
-            paymentMethod: PaymentMethod.ONLINE_PAYMENT,
-            orderDate: model.orderDate,
-            paymentStatus: PaymentStatus.PAID,
-            khaltiTransactionId: success.token,
-            khaltiProductId: productId,
-            khaltiRefId: success.token,
-            paymentDate: DateTime.now(),
-            id: '',
-          );
+      if (paymentIntent == null) {
+        throw Exception('Failed to create payment intent');
+      }
 
-          try {
-            await firestoreService.addOrder(
-              FirebaseAuth.instance.currentUser!.uid,
-              updatedModel,
-            );
+      // Step 2: Initialize payment sheet
+      await Stripe.instance.initPaymentSheet(
+        paymentSheetParameters: SetupPaymentSheetParameters(
+          paymentIntentClientSecret: paymentIntent['client_secret'],
+          merchantDisplayName: 'Jersey Store',
+          customerId: paymentIntent['customer'],
+          customerEphemeralKeySecret: paymentIntent['ephemeralKey'],
+          style: ThemeMode.light,
+          billingDetails: BillingDetails(
+            name: _nameController.text,
+            phone: _phoneController.text,
+            address: Address(
+              city: _cityController.text,
+              country: 'US', // Change to your country
+              line1: _addressController.text,
+              postalCode: _postalCodeController.text,
+              state: '',
+              line2: '',
+            ),
+          ),
+        ),
+      );
 
-            Navigator.pop(context);
-            Navigator.pop(context);
-            Loaders().showOrderPlacedPopup(context);
-            
-            // Show success message
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Payment successful! Transaction ID: ${success.token}'),
-                backgroundColor: Colors.green,
-              ),
-            );
-          } catch (e) {
-            print('Error saving order: $e');
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Payment successful but failed to save order: $e'),
-                backgroundColor: Colors.orange,
-              ),
-            );
-          }
-        },
-        onFailure: (PaymentFailureModel failure) {
-          print('Khalti Payment Failed: ${failure.toString()}');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Payment failed: ${failure.message}'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        },
-        onCancel: () {
-          print('Khalti Payment Cancelled');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Payment cancelled'),
-              backgroundColor: Colors.orange,
-            ),
-          );
-        },
+      // Step 3: Present payment sheet
+      await Stripe.instance.presentPaymentSheet();
+
+      // Payment successful
+      print('Stripe Payment Success');
+
+      try {
+        // Create order using the unified createOrder method
+        await FirestoreService().createOrder(
+          userId: FirebaseAuth.instance.currentUser!.uid,
+          cartItems: widget.cartItems,
+          fullname: _nameController.text,
+          phoneNumber: _phoneController.text,
+          address: _addressController.text,
+          city: _cityController.text,
+          postalCode: _postalCodeController.text,
+          paymentMethod: PaymentMethod.ONLINE_PAYMENT,
+          status: OrderStatus.PENDING,
+          paymentStatus: PaymentStatus.PAID,
+          stripePaymentIntentId: paymentIntent['id'],
+        );
+
+        Navigator.pop(context);
+        Navigator.pop(context);
+        Loaders().showOrderPlacedPopup(context);
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Payment successful! Your order has been placed.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } catch (e) {
+        print('Error saving order: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Payment successful but failed to save order: $e'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } on StripeException catch (e) {
+      print('Stripe Error: ${e.error.localizedMessage}');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Payment failed: ${e.error.localizedMessage}'),
+          backgroundColor: Colors.red,
+        ),
       );
     } catch (e) {
-      print('Khalti Payment Error: $e');
+      print('Payment Error: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Payment error: $e'),
@@ -181,13 +187,55 @@ class _CheckoutPageState extends State<CheckoutPage> {
     }
   }
 
-  Future<void> processCODOrder(OrderModel model) async {
-    await firestoreService.addOrder(
-      FirebaseAuth.instance.currentUser!.uid,
-      model,
+  Future<Map<String, dynamic>?> createPaymentIntent({
+    required int amount,
+    required String currency,
+    required String description,
+  }) async {
+    try {
+      // You need to create this endpoint on your backend
+      // This is a placeholder - replace with your actual backend URL
+      const String backendUrl = 'http://localhost:5000/create-payment-intent';
+
+      final response = await http.post(
+        Uri.parse(backendUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'amount': amount,
+          'currency': currency,
+          'description': description,
+          'customer_name': _nameController.text,
+          'customer_phone': _phoneController.text,
+          'customer_email': FirebaseAuth.instance.currentUser?.email,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        print('Failed to create payment intent: ${response.body}');
+        return null;
+      }
+    } catch (e) {
+      print('Error creating payment intent: $e');
+      return null;
+    }
+  }
+
+  Future<void> processCODOrder() async {
+    await FirestoreService().createOrder(
+      userId: FirebaseAuth.instance.currentUser!.uid,
+      cartItems: widget.cartItems,
+      fullname: _nameController.text,
+      phoneNumber: _phoneController.text,
+      address: _addressController.text,
+      city: _cityController.text,
+      postalCode: _postalCodeController.text,
+      paymentMethod: PaymentMethod.CASH_ON_DELIVERY,
+      status: OrderStatus.PENDING,
+      paymentStatus: PaymentStatus.PENDING,
     );
 
-    Navigator.pop(context);
     Navigator.pop(context);
     Loaders().showOrderPlacedPopup(context);
   }
@@ -232,63 +280,91 @@ class _CheckoutPageState extends State<CheckoutPage> {
                           ),
                         ),
                         const SizedBox(height: 16),
+
+                        // Cart Items List
                         Container(
-                          padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
                             border: Border.all(color: Colors.grey.shade300),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Row(
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.network(
-                                  widget.model.jerseyImage[0],
-                                  width: 80,
-                                  height: 80,
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                          child: ListView.separated(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: widget.cartItems.length,
+                            separatorBuilder: (context, index) =>
+                                Divider(height: 1, color: Colors.grey.shade300),
+                            itemBuilder: (context, index) {
+                              final item = widget.cartItems[index];
+                              return Container(
+                                padding: const EdgeInsets.all(16),
+                                child: Row(
                                   children: [
-                                    Text(
-                                      widget.model.jerseyTitle,
-                                      style: GoogleFonts.russoOne(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Image.network(
+                                        item.jersey.jerseyImage[0],
+                                        width: 60,
+                                        height: 60,
+                                        fit: BoxFit.cover,
                                       ),
                                     ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Size: ${widget.selectedSize}',
-                                      style: GoogleFonts.robotoSlab(
-                                        fontSize: 14,
-                                        color: Colors.grey.shade600,
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            item.jersey.jerseyTitle,
+                                            style: GoogleFonts.russoOne(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            'Size: ${item.selectedSize}',
+                                            style: GoogleFonts.robotoSlab(
+                                              fontSize: 12,
+                                              color: Colors.grey.shade600,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            'Qty: ${item.quantity}',
+                                            style: GoogleFonts.robotoSlab(
+                                              fontSize: 12,
+                                              color: Colors.grey.shade600,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Quantity: ${widget.quantity}',
-                                      style: GoogleFonts.robotoSlab(
-                                        fontSize: 14,
-                                        color: Colors.grey.shade600,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Rs. ${widget.model.jerseyPrice}',
-                                      style: GoogleFonts.russoOne(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
+                                      children: [
+                                        Text(
+                                          'Rs. ${item.jersey.jerseyPrice}',
+                                          style: GoogleFonts.robotoSlab(
+                                            fontSize: 12,
+                                            color: Colors.grey.shade600,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Rs. ${(item.jersey.jerseyPrice * item.quantity).toStringAsFixed(0)}',
+                                          style: GoogleFonts.russoOne(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
-                              ),
-                            ],
+                              );
+                            },
                           ),
                         ),
 
@@ -448,11 +524,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                     Container(
                                       padding: const EdgeInsets.all(4),
                                       decoration: BoxDecoration(
-                                        color: Colors.purple,
+                                        color: Colors.indigo,
                                         borderRadius: BorderRadius.circular(4),
                                       ),
                                       child: Text(
-                                        'Khalti',
+                                        'Stripe',
                                         style: GoogleFonts.robotoSlab(
                                           color: Colors.white,
                                           fontSize: 12,
@@ -462,13 +538,13 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                     ),
                                     const SizedBox(width: 8),
                                     Text(
-                                      'Khalti Payment',
+                                      'Card Payment',
                                       style: GoogleFonts.robotoSlab(),
                                     ),
                                   ],
                                 ),
                                 subtitle: Text(
-                                  'Pay securely with Khalti',
+                                  'Pay securely with Stripe',
                                   style: GoogleFonts.robotoSlab(
                                     fontSize: 12,
                                     color: Colors.grey.shade600,
@@ -502,7 +578,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    'Subtotal',
+                                    'Subtotal (${totalItems} items)',
                                     style: GoogleFonts.robotoSlab(fontSize: 16),
                                   ),
                                   Text(
@@ -591,32 +667,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
                         ],
                       ),
                       child: ElevatedButton(
-                        onPressed: isLoading ? null : () {
-                          placeOrder(
-                            OrderModel(
-                              id: '',
-                              status: OrderStatus.PENDING,
-                              jersey: widget.model,
-                              quantity: widget.quantity,
-                              selectedSize: widget.selectedSize,
-                              fullname: _nameController.text,
-                              phoneNUmber: _phoneController.text,
-                              address: _addressController.text,
-                              city: _cityController.text,
-                              postalCode: _postalCodeController.text,
-                              totalAmount: total,
-                              paymentMethod: selectedPaymentMethod == "Cash on Delivery"
-                                  ? PaymentMethod.CASH_ON_DELIVERY
-                                  : PaymentMethod.ONLINE_PAYMENT,
-                              orderDate: DateTime.now(),
-                              paymentStatus: PaymentStatus.PENDING,
-                            ),
-                          );
-                        },
+                        onPressed: isLoading ? null : placeOrder,
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          backgroundColor: selectedPaymentMethod == 'Online Payment' 
-                              ? Colors.purple.shade600
+                          backgroundColor:
+                              selectedPaymentMethod == 'Online Payment'
+                              ? Colors.indigo.shade600
                               : Colors.green.shade700,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
@@ -642,9 +698,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                         borderRadius: BorderRadius.circular(4),
                                       ),
                                       child: Text(
-                                        'Khalti',
+                                        'Stripe',
                                         style: GoogleFonts.robotoSlab(
-                                          color: Colors.purple.shade600,
+                                          color: Colors.indigo.shade600,
                                           fontSize: 12,
                                           fontWeight: FontWeight.bold,
                                         ),
@@ -653,7 +709,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                   if (selectedPaymentMethod == 'Online Payment')
                                     const SizedBox(width: 8),
                                   Text(
-                                    selectedPaymentMethod == 'Online Payment' 
+                                    selectedPaymentMethod == 'Online Payment'
                                         ? 'Pay Rs. ${total.toStringAsFixed(0)}'
                                         : 'Place Order - Rs. ${total.toStringAsFixed(0)}',
                                     style: GoogleFonts.russoOne(

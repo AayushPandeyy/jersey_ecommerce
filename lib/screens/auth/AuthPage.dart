@@ -83,6 +83,7 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
         _registerNameController.text,
         _registerPhoneController.text,
       );
+      Navigator.pop(context); // Close the loading dialog
 
       showDialog(
         context: context,
@@ -152,12 +153,8 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
         );
       } else {
         Navigator.pop(context);
-        Navigator.pop(context);
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => const NavigationScreen()),
-          (Route<dynamic> route) => false,
-        );
+
+        
       }
     } on FirebaseAuthException catch (e) {
       Navigator.pop(context);
