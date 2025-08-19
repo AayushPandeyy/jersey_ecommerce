@@ -124,9 +124,9 @@ class CartOrderModel {
       'postalCode': postalCode,
       'totalAmount': totalAmount,
       'paymentMethod': paymentMethod.name,
-      'orderDate': orderDate.toIso8601String(),
+      'orderDate': Timestamp.fromDate(orderDate),
       'paymentStatus': paymentStatus.name,
-      'paymentDate': paymentDate?.toIso8601String(),
+      'paymentDate': paymentDate != null ? Timestamp.fromDate(paymentDate!) : null,
       // Stripe fields
       'stripePaymentIntentId': stripePaymentIntentId,
       'stripeTransactionId': stripeTransactionId,
@@ -160,13 +160,15 @@ class CartOrderModel {
         (e) => e.name == map['paymentMethod'],
         orElse: () => PaymentMethod.CASH_ON_DELIVERY,
       ),
-      orderDate: DateTime.parse(map['orderDate'] ?? DateTime.now().toIso8601String()),
+      orderDate:  map['orderDate'] is Timestamp 
+          ? (map['orderDate'] as Timestamp).toDate()
+          : DateTime.now(),
       paymentStatus: PaymentStatus.values.firstWhere(
         (e) => e.name == map['paymentStatus'],
         orElse: () => PaymentStatus.PENDING,
       ),
       paymentDate: map['paymentDate'] != null 
-          ? DateTime.parse(map['paymentDate']) 
+          ? (map['paymentDate'] as Timestamp).toDate()
           : null,
       // Stripe fields
       stripePaymentIntentId: map['stripePaymentIntentId'],

@@ -2,6 +2,7 @@
 <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
     <application
+        android:theme="@android:style/Theme.Translucent.NoTitleBar"
         android:label="jersey_ecommerce"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">

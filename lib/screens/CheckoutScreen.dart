@@ -94,9 +94,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
       // Step 1: Create payment intent on your backend
       final paymentIntent = await createPaymentIntent(
-        amount: (total * 100).toInt(), // Stripe expects amount in cents
-        currency: 'usd', // Change to your currency
-        description: productName,
+       (total.toInt()).toString(), // Stripe expects amount in cents
+        'usd', // Change to your currency
       );
 
       if (paymentIntent == null) {
@@ -149,7 +148,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
         );
 
         Navigator.pop(context);
-        Navigator.pop(context);
         Loaders().showOrderPlacedPopup(context);
 
         // Show success message
@@ -187,40 +185,31 @@ class _CheckoutPageState extends State<CheckoutPage> {
     }
   }
 
-  Future<Map<String, dynamic>?> createPaymentIntent({
-    required int amount,
-    required String currency,
-    required String description,
-  }) async {
+createPaymentIntent(String amount, String currency) async {
     try {
-      // You need to create this endpoint on your backend
-      // This is a placeholder - replace with your actual backend URL
-      const String backendUrl = 'http://localhost:5000/create-payment-intent';
-
-      final response = await http.post(
-        Uri.parse(backendUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'amount': amount,
-          'currency': currency,
-          'description': description,
-          'customer_name': _nameController.text,
-          'customer_phone': _phoneController.text,
-          'customer_email': FirebaseAuth.instance.currentUser?.email,
-        }),
+      Map<String, dynamic> body = {
+        // Amount must be in smaller unit of currency
+        // so we have multiply it by 100
+        'amount': ((int.parse(amount)) * 100).toString(), 
+        'currency': currency,
+        'payment_method_types[]': 'card',
+      };
+      var secretKey =
+          "sk_test_51RxlabIdq3n9dEVZZ3U3SaU3jEk71n7DXV48ydpPqbhPo4PBlLAaIQIiH9OWNltJucOE4K3fu5YeeszFjhJMlYDY00VcdN7TBZ";
+      var response = await http.post(
+        Uri.parse('https://api.stripe.com/v1/payment_intents'),
+        headers: {
+          'Authorization': 'Bearer $secretKey',
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: body,
       );
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        print('Failed to create payment intent: ${response.body}');
-        return null;
-      }
-    } catch (e) {
-      print('Error creating payment intent: $e');
-      return null;
+      print('Payment Intent Body: ${response.body.toString()}');
+      return jsonDecode(response.body.toString());
+    } catch (err) {
+      print('Error charging user: ${err.toString()}');
     }
-  }
+}
 
   Future<void> processCODOrder() async {
     await FirestoreService().createOrder(

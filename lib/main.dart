@@ -5,8 +5,6 @@ import 'package:jersey_ecommerce/firebase_options.dart';
 import 'package:jersey_ecommerce/screens/NavigationScreen.dart';
 import 'package:jersey_ecommerce/screens/auth/AuthPage.dart';
 import 'package:jersey_ecommerce/screens/auth/LoginChecker.dart';
-import 'package:khalti_flutter/khalti_flutter.dart';
-import 'package:khalti_flutter/localization/khalti_localizations.dart';
 
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,13 +15,7 @@ void main() async{
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return KhaltiScope(
-      
-      publicKey: "test_public_key_d5d9f63743584dc38753056b0cc737d5", // Test key
-
-      enabledDebugging: true,
-      builder: (context, navKey) {
-        return MaterialApp(
+    return MaterialApp(
           title: 'Flutter Demo',
       theme: ThemeData(
         textTheme: GoogleFonts.marcellusTextTheme(),
@@ -32,14 +24,10 @@ class MyApp extends StatelessWidget {
       ),
       home: LoginChecker(),
       debugShowCheckedModeBanner: false,
-          navigatorKey: navKey,
-          localizationsDelegates: const [
-            KhaltiLocalizations.delegate,
-          ],
+          
           // ... rest of your app configuration
         );
-      },
-    );
+      
   }
 }
 

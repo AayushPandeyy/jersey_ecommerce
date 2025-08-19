@@ -10,8 +10,8 @@ plugins {
 
 android {
     namespace = "com.example.jersey_ecommerce"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = "28.0.12674087"
+    compileSdk = 35
+    ndkVersion = "29.0.13599879"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
