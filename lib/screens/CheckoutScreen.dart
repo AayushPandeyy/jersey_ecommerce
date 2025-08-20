@@ -150,6 +150,17 @@ class _CheckoutPageState extends State<CheckoutPage> {
         Navigator.pop(context);
         Loaders().showOrderPlacedPopup(context);
 
+        for (var cartitem in widget.cartItems) {
+          // Update stock in Firestore
+          await firestoreService.updateJerseyStock(
+             cartitem.jersey.jerseyId,
+            cartitem.jersey.stock - cartitem.quantity,
+          );
+          
+        }
+
+
+
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

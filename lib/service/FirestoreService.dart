@@ -345,6 +345,7 @@ Stream<List<CartOrderModel>> getUserOrders(String userId) {
                 jerseyPrice: (item['jersey']['jerseyPrice'] ?? 0).toDouble(),
                 jerseyImage: List<String>.from(item['jersey']['jerseyImage'] ?? []),
                 rating: (item['jersey']['rating'] ?? 0.0).toDouble(),
+                stock: (item['jersey']['stock'] ?? 0).toInt(), // Fixed: added stock parsing
               );
 
               return CartOrderItemModel(
@@ -365,6 +366,7 @@ Stream<List<CartOrderModel>> getUserOrders(String userId) {
               jerseyPrice: (data['jersey']['jerseyPrice'] ?? 0).toDouble(),
               jerseyImage: List<String>.from(data['jersey']['jerseyImage'] ?? []),
               rating: (data['jersey']['rating'] ?? 0.0).toDouble(),
+              stock: (data['jersey']['stock'] ?? 0).toInt(), // Fixed: added stock parsing
             );
 
             final quantity = data['quantity'] ?? 1;
@@ -460,6 +462,7 @@ Stream<List<CartOrderModel>> getUserOrders(String userId) {
                 jerseyPrice: (item['jersey']['jerseyPrice'] ?? 0).toDouble(),
                 jerseyImage: List<String>.from(item['jersey']['jerseyImage'] ?? []),
                 rating: (item['jersey']['rating'] ?? 0.0).toDouble(),
+                stock: (item['jersey']['stock'] ?? 0).toInt(), // Fixed: added stock parsing
               );
 
               return CartOrderItemModel(
@@ -480,6 +483,7 @@ Stream<List<CartOrderModel>> getUserOrders(String userId) {
               jerseyPrice: (data['jersey']['jerseyPrice'] ?? 0).toDouble(),
               jerseyImage: List<String>.from(data['jersey']['jerseyImage'] ?? []),
               rating: (data['jersey']['rating'] ?? 0.0).toDouble(),
+              stock: (data['jersey']['stock'] ?? 0).toInt(), // Fixed: added stock parsing
             );
 
             final quantity = data['quantity'] ?? 1;
@@ -692,6 +696,25 @@ Stream<List<CartOrderModel>> getUserOrders(String userId) {
           .toList();
     });
   }
+
+  Future<void> updateJerseyStock(String jerseyId, int newStock) async {
+  try {
+    final querySnapshot = await FirebaseFirestore.instance
+        .collection('Jersey')
+        .where("jerseyId", isEqualTo: jerseyId)
+        .get();
+
+    if (querySnapshot.docs.isEmpty) {
+      throw Exception('Jersey not found');
+    }
+
+    final docRef = querySnapshot.docs.first.reference;
+    await docRef.update({'stock': newStock});
+  } catch (e) {
+    throw Exception('Failed to update jersey stock: $e');
+  }
+}
+
 
 Stream<List<CartItemModel>> getCartItems(String userId) {
   return FirebaseFirestore.instance

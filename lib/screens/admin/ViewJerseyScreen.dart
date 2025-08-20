@@ -642,7 +642,7 @@ class _ViewJerseysPageState extends State<ViewJerseysPage> {
 
             // Jersey Details
             Expanded(
-              flex: 2,
+              flex: 3,
               child: Padding(
                 padding: const EdgeInsets.all(12),
                 child: Column(
@@ -691,6 +691,14 @@ class _ViewJerseysPageState extends State<ViewJerseysPage> {
                     // Price
                     Text(
                       '\$${jersey.jerseyPrice.toStringAsFixed(2)}',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green[700],
+                      ),
+                    ),
+                    Text(
+                      'In Stock : ${jersey.stock.toString()}',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,

@@ -11,8 +11,8 @@ class CartOrderItemModel {
   final JerseyModel jersey;
   final int quantity;
   final String selectedSize;
-  final double itemPrice; // Price per unit
-  final double totalPrice; // quantity * itemPrice
+  final double itemPrice;
+  final double totalPrice; 
 
   CartOrderItemModel({
     required this.jerseyId,

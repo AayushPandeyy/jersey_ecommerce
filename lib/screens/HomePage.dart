@@ -505,6 +505,13 @@ Widget productCard(BuildContext context, JerseyModel jerseyModel) {
               style: GoogleFonts.marcellus(fontWeight: FontWeight.bold),
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Text(
+              jerseyModel.stock!=0 ? "In Stock" : "Out of Stock",
+              style: GoogleFonts.marcellus(fontWeight: FontWeight.bold,color: jerseyModel.stock!=0 ? Colors.green : Colors.red),
+            ),
+          ),
         ],
       ),
     ),

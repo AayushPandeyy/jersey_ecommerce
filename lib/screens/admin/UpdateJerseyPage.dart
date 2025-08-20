@@ -17,6 +17,7 @@ class _UpdateJerseyPageState extends State<UpdateJerseyPage> {
   final _descriptionController = TextEditingController();
   final _priceController = TextEditingController();
   final _ratingController = TextEditingController();
+  final _stockController = TextEditingController();
 
   bool _isLoading = false;
   String _uploadStatus = '';
@@ -79,6 +80,7 @@ class _UpdateJerseyPageState extends State<UpdateJerseyPage> {
         jerseyDescription: _descriptionController.text.trim(),
         jerseyPrice: double.parse(_priceController.text.trim()),
         rating: double.tryParse(_ratingController.text.trim()) ?? widget.jersey.rating,
+        stock: int.tryParse(_stockController.text.trim()) ?? widget.jersey.stock, // Ensure stock is updated
       );
 
       // Update jersey using the service
@@ -374,6 +376,29 @@ class _UpdateJerseyPageState extends State<UpdateJerseyPage> {
                         ),
                       ],
                     ),
+                    TextFormField(
+                            controller: _stockController,
+                            enabled: !_isLoading,
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              labelText: 'Stock',
+                              prefixIcon: const Icon(Icons.production_quantity_limits),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey[50],
+                            ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Please enter stock';
+                              }
+                              if (double.tryParse(value.trim()) == null) {
+                                return 'Please enter valid stock';
+                              }
+                              return null;
+                            },
+                          ),
                   ],
                 ),
               ),

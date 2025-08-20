@@ -5,7 +5,8 @@ class JerseyModel {
   String jerseyDescription;
   List<String> jerseyImage;
   double jerseyPrice;
-  double rating; // Added rating field
+  double rating;
+  int stock; // Added stock field
 
   JerseyModel({
     required this.jerseyId,
@@ -14,6 +15,7 @@ class JerseyModel {
     required this.jerseyImage,
     required this.jerseyPrice,
     required this.rating,
+    required this.stock, // Add to constructor
   });
 
   factory JerseyModel.fromJson(Map<String, dynamic> json) {
@@ -23,7 +25,8 @@ class JerseyModel {
       jerseyDescription: json['jerseyDescription'] as String,
       jerseyImage: List<String>.from(json['jerseyImage'] as List),
       jerseyPrice: (json['jerseyPrice'] as num).toDouble(),
-      rating: (json['rating'] as num).toDouble(), // Parse rating
+      rating: (json['rating'] as num).toDouble(),
+      stock: (json['stock'] as num).toInt(), // Parse stock
     );
   }
 
@@ -35,10 +38,10 @@ class JerseyModel {
       'jerseyImage': jerseyImage,
       'jerseyPrice': jerseyPrice,
       'rating': rating,
+      'stock': stock, // Add to map
     };
   }
 
-  // fromMap function
   factory JerseyModel.fromMap(Map<String, dynamic> map) {
     return JerseyModel(
       jerseyId: map['jerseyId'] as String,
@@ -47,10 +50,10 @@ class JerseyModel {
       jerseyImage: List<String>.from(map['jerseyImage'] as List),
       jerseyPrice: (map['jerseyPrice'] as num).toDouble(),
       rating: (map['rating'] as num).toDouble(),
+      stock: (map['stock'] as num).toInt(), // Parse stock
     );
   }
 
-  // toMap function
   Map<String, dynamic> toMap() {
     return {
       'jerseyId': jerseyId,
@@ -59,6 +62,7 @@ class JerseyModel {
       'jerseyImage': jerseyImage,
       'jerseyPrice': jerseyPrice,
       'rating': rating,
+      'stock': stock, // Add to map
     };
   }
 }
@@ -71,6 +75,7 @@ extension JerseyCopy on JerseyModel {
     List<String>? jerseyImage,
     double? jerseyPrice,
     double? rating,
+    int? stock, // Add stock to copyWith
   }) {
     return JerseyModel(
       jerseyId: jerseyId ?? this.jerseyId,
@@ -79,6 +84,7 @@ extension JerseyCopy on JerseyModel {
       jerseyImage: jerseyImage ?? this.jerseyImage,
       jerseyPrice: jerseyPrice ?? this.jerseyPrice,
       rating: rating ?? this.rating,
+      stock: stock ?? this.stock, // Copy stock
     );
   }
 }

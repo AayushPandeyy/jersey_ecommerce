@@ -18,6 +18,7 @@ class _AddJerseyPageState extends State<AddJerseyPage> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _priceController = TextEditingController();
+  final _stockController = TextEditingController();
   final _ratingController = TextEditingController();
 
   List<File?> _selectedImages = [null, null, null, null];
@@ -101,6 +102,7 @@ class _AddJerseyPageState extends State<AddJerseyPage> {
         jerseyImage: [], // Will be set after image upload
         jerseyPrice: double.parse(_priceController.text.trim()),
         rating: 4.5,
+        stock: int.parse(_stockController.text.trim()),
       );
 
       setState(() {
@@ -367,7 +369,7 @@ class _AddJerseyPageState extends State<AddJerseyPage> {
                       enabled: !_isLoading,
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
-                        labelText: 'Price (\$)',
+                        labelText: 'Price (Rs.)',
                         prefixIcon: const Icon(Icons.attach_money),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -381,6 +383,32 @@ class _AddJerseyPageState extends State<AddJerseyPage> {
                         }
                         if (double.tryParse(value.trim()) == null) {
                           return 'Please enter valid price';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Price Field
+                    TextFormField(
+                      controller: _stockController,
+                      enabled: !_isLoading,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: 'Stock',
+                        prefixIcon: const Icon(Icons.production_quantity_limits),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey[50],
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter stock amount';
+                        }
+                        if (double.tryParse(value.trim()) == null) {
+                          return 'Please enter valid stock amount';
                         }
                         return null;
                       },
