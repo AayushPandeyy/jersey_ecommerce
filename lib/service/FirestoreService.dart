@@ -734,7 +734,7 @@ Stream<List<CartItemModel>> getCartItems(String userId) {
 
   // Check if the item already exists (same jerseyId + size)
   final existing = await cartRef
-      .where('jerseyId', isEqualTo: cartItem.jersey.jerseyId)
+      .where('jersey.jerseyId', isEqualTo: cartItem.jersey.jerseyId)
       .where('selectedSize', isEqualTo: cartItem.selectedSize)
       .get();
 
